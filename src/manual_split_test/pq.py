@@ -5,7 +5,7 @@ import pprint
 import re
 import time
 
-PATH = 'D:\\OneDrive - Microsoft\\data\\20news\\20news-bydate-train\\rec.motorcycles.parquet'
+PARQUET_PATH = 'D:\\OneDrive - Microsoft\\data\\20news\\20news-bydate-train\\train_clean'
 import pyarrow
 import pandas as pd
 
@@ -19,7 +19,15 @@ def cnvt2csv(PATH):
     adf.to_csv(new_name)
     print('wrote ', new_name)
 
-for a_file in glob.glob('*.parquet'):
-    print('For ', a_file, end='\t')
-    cnvt2csv(a_file)
+def consolidate_parquet(PATH):
+    full_df = pd.DataFrame()
+    for a_file in glob.glob(os.path.join(PATH, '*.parquet')):
+        try:
+            adf = pd.read_parquet(a_file)
+        except Exception as e:
+            print(f"for file {a_file} got exception {e}.")
+        full_df = pd.concat([full_df, adf])
+    print("Full df:", full_df.shape)
+    return full_df
 
+# consolidate_parquet(PARQUET_PATH)

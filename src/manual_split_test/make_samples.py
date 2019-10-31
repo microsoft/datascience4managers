@@ -42,7 +42,7 @@ class CreateNewsGroupsData(object):
                 if VERBOSE:
                     print('For msg: ', sample_file, ' Found', pruned_contents)
                 if pruned_contents[0] > 1:
-                    self.train_df.append((self.label, str(sample_file), pruned_contents[1]))
+                    self.train_df.append((self.label, str(sample_file), pruned_contents[1]))  ##TODO -extract item number from sample file
             else:
                 if VERBOSE: 
                     print('No file found: ', file_path)

@@ -25,17 +25,19 @@ import bokeh as bk
 from bokeh.io import output_file, show
 from bokeh.models import ColumnDataSource, FixedTicker, PrintfTickFormatter
 from bokeh.plotting import figure
+import pq
 __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 
 ### config constants 
 VERBOSE = False
 DATA_DIR  = os.path.join(os.getcwd() ,'../../shared/') 
+PARQUET_DIR = 'D:\\OneDrive - Microsoft\\data\\20news\\20news-bydate-train\\train_clean'
 GLOB_PATTERN = 'language_selection_tests'
 
 
 ########################################################################
 class CollectSplits(object):
-    'Collect csv files of daily customer logs and aggregate into one dataframe.' 
+    'Collect csv files from participants and aggregate.' 
     
     def __init__(self, glob_pattern, cvs_dir):
         self.tst_lbls = []
@@ -56,12 +58,28 @@ class CollectSplits(object):
 class BinaryComparisons(object):
     'Randomly pair training cases to find words specific to each class.'
     def __init__(self,data_paths):
-        'merge in all training data'
-        pass
+        self.full_df = pq.consolidate_parquet(data_paths)       # 'merge all training data'
+        self.full_df.reset_index()
+        
 
-    def random_pairs(self):
-        'Sample without replacement for pairwise item comarisons'
-        pass
+    def random_pairs(self, no_pairs):
+        'Sample without replacement for pairwise item comparisons'
+        pair_df = np.empty(shape=(0,6))
+        for n0 in range(no_pairs):
+            reps =0
+            while reps < 100:
+                pair = self.full_df.sample(2, replace=False)
+                labels = pair['label'].values
+                if labels[0] !=labels[1]:
+                    break
+            reps +=1
+            print (reps, pair)
+            # pair_df = pd.concat([pair_df, pd.concat([pair.iloc[0,], pair.iloc[1,]], axis=1)], axis=0)
+            row = np.hstack([pair.iloc[0,].values, pair.iloc[1,].values]) 
+            pair_df = np.vstack([pair_df, row])
+        pair_df = pd.DataFrame(pair_df)
+        pair_df.columns = ['label1', 'item1', 'msg1', 'label2', 'item2', 'msg2']
+        return pair_df
 
     def embed_in_excel(self):
         'Export ss files that users '
@@ -69,21 +87,18 @@ class BinaryComparisons(object):
 class SplitClassifier (object):
     'Assemble the splits are run them with highest precision lowest coverage first.'
 
-    def __init__(self, db="metric_db"):
+    def __init__(self, path):
         pass
-        # self.metric_json = self.convert2json(db)
 
 ###############################################################################
 def main(input_dir, glob_pattern):
 
-    # Test content extraction
-    msg_ds = CreateNewsGroupsData() 
-    pprint.pprint(msg_ds.train_df)
-
     # Test split pattern extraction
-    input_pattern= glob_pattern + '*.csv'
-    cs = CollectSplits(input_pattern, DATA_DIR)
-    print("tsts: ", cs.tst_lbls)
+    # input_pattern= glob_pattern + '*.csv'
+    cs = BinaryComparisons(PARQUET_DIR)
+    print("train: ", cs.full_df.shape)
+    pair_df = cs.random_pairs(6)
+    print(pair_df)
     return 0
 
 ########################################################################
