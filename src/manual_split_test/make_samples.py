@@ -25,11 +25,12 @@ GLOB_PATTERN = '*'
 
 ########################################################################
 class CreateNewsGroupsData(object):
-    'Prune the newsgroups text to create a labelled table'
+    'Prune the newsgroups text to create a labelled table.'
 
     def __init__(self, 
                 data_path= SAMPLES_DIR,
                 glob_pattern = GLOB_PATTERN):
+        self.leak_cnt = 0
         self.train_df = []
         self.label = os.path.basename(data_path) #re.search(r'([^/]+)/$', data_path).group(1)
         self.save_path = os.path.dirname(data_path)
@@ -88,6 +89,7 @@ class CreateNewsGroupsData(object):
     def flag_label_leaks(self, ln):
         'Lines that contain the label string need to be removed'
         if ln.find(self.label) > -1:
+            self.leak_cnt +=1
             if VERBOSE: print ('Oops, a leaky line: ', ln)
             return True              # Yes there's a leak. 
         else:
@@ -103,7 +105,7 @@ class CreateNewsGroupsData(object):
             os.makedirs(save_path)
         save_file = os.path.join(save_path, self.label + '.parquet')
         the_df.to_parquet(save_file)
-        print("Output ", save_file)
+        print("Leaks found:", self.leak_cnt, "\tOutput ", save_file)
 
 
 ###############################################################################
@@ -135,7 +137,7 @@ if __name__ == '__main__':
         g = sys.argv.index('-g')
         GLOB_PATTERN = sys.argv[g+1]  
 
-    for a_dir in glob.glob(os.path.join(SAMPLES_DIR, '*')):
+    for a_dir in glob.glob(os.path.join(SAMPLES_DIR, '*')):  # TODO this fails when it begins to iterate over parquet files. 
         main(os.path.join(SAMPLES_DIR, a_dir), GLOB_PATTERN)
 
     print(sys.argv, "\nDone in ", 

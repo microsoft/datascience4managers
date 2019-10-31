@@ -32,64 +32,6 @@ VERBOSE = False
 DATA_DIR  = os.path.join(os.getcwd() ,'../../shared/') 
 GLOB_PATTERN = 'language_selection_tests'
 
-########################################################################
-class CreateNewsGroupsData(object):
-    'Prune the newsgroups text to create a labelled table'
-
-    def __init__(self, 
-                data_path= 'D:/OneDrive - Microsoft/data/20news/20news-bydate-train/rec.motorcycles/', # Must end in /
-                data_range=(104986, 105065)):
-        self.train_df = []
-        label = re.search(r'([^/]+)/$', data_path).group(1)
-        for sample_file in range(data_range[0], data_range[1]):
-            file_path = os.path.abspath(os.path.join(data_path, str(sample_file)))
-            if os.path.exists(file_path):
-                the_contents = open(file_path, 'r' ).readlines()
-                pruned_contents = self.prune_contents(the_contents)
-                if VERBOSE:
-                    print('For msg: ', sample_file, ' Found', pruned_contents)
-                if pruned_contents[0] > 1:
-                    self.train_df.append((label, str(sample_file), pruned_contents[1]))
-            else:
-                if VERBOSE: 
-                    print('No file found: ', file_path)
-
-    def prune_contents(self, msg_txt):
-        'Iterate by lines, to remove the header and find the first multi line paragraph.'
-        pruned_content = [] # A list of strings. 
-        in_header = True
-        in_quotes = True
-        para_ln_cnt = 0
-        for ln in msg_txt:
-            #ln = ln.trim()
-            if not in_header and not in_quotes:
-                if not ln.strip():  # Blank line => End of section
-                    break
-                else:             # We want this content
-                    para_ln_cnt +=1
-                    pruned_content.append(ln)
-            elif not in_header and in_quotes:
-                if self.quoted_line(ln):  # consume until content
-                    continue
-                else:
-                    in_quotes = False
-                    para_ln_cnt =1
-                    pruned_content.append(ln)                    
-            else: # in header
-                if not ln.strip():  # blank line always ends the header
-                    in_header = False
-                    continue
-        return (para_ln_cnt, pruned_content)
-
-    def quoted_line(self, ln):
-        if re.match(r'^\W', ln):     # None alphanumeric first char, e.g. > 
-            return True
-        elif re.search(r'^In|writes\W$|wrote\W$', ln):
-            return True
-        elif not ln.strip():
-            return True
-        else:
-            return False
 
 ########################################################################
 class CollectSplits(object):
@@ -111,8 +53,21 @@ class CollectSplits(object):
         print("Data dim: ", self.as_df.shape)
 
 ########################################################################
+class BinaryComparisons(object):
+    'Randomly pair training cases to find words specific to each class.'
+    def __init__(self,data_paths):
+        'merge in all training data'
+        pass
+
+    def random_pairs(self):
+        'Sample without replacement for pairwise item comarisons'
+        pass
+
+    def embed_in_excel(self):
+        'Export ss files that users '
+########################################################################
 class SplitClassifier (object):
-    'Module names and class names can be the same.'
+    'Assemble the splits are run them with highest precision lowest coverage first.'
 
     def __init__(self, db="metric_db"):
         pass
