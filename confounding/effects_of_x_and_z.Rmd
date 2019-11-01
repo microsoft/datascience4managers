@@ -12,8 +12,6 @@ This app plots the predicted outcome (`y`-value) for given inputs (`x` and`z` va
 
 
 ```{r build_models, echo=FALSE, message=FALSE, warning=FALSE}
-setwd("~/books_in_progress/managing_ML/MLADS_fall_2019")
-
 library(nnet)
 library(randomForest)
 library(dplyr)
