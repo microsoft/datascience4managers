@@ -8,6 +8,9 @@ runtime: shiny
 knitr::opts_chunk$set(echo=FALSE, message=FALSE)
 ```
 
+This app plots the predicted outcome (`y`-value) for given inputs (`x` and`z` values). There are three types of models (lm, randomForest, and nnet) and two formulas (formula `A` is `y ~ x` and formula B is `y ~ x + z`).
+
+
 ```{r build_models, echo=FALSE, message=FALSE, warning=FALSE}
 setwd("~/books_in_progress/managing_ML/MLADS_fall_2019")
 
@@ -15,22 +18,26 @@ library(nnet)
 library(randomForest)
 library(dplyr)
 library(ggplot2)
+library(whisker)
 
 DATA_DIR <- "models_and_data"
 
 TRAIN_MODELS <- GENERATE_DATA <- FALSE
 
 if (GENERATE_DATA){
-  simulate_data <- function(N, m, b=0, noise=1){
-    set.seed(1)
-    x <- rnorm(N, sd=10*noise)
-    y <- m[1] * x + b + rnorm(N, sd=noise)
-    z <- y - (m[2]*x + b) + rnorm(N, sd=noise)
-    tibble(y, x, z)
+  simulate_data <- function(N, m, 
+                            b=list(x=7, y=100, z=-15),
+                            sigma=list(x=1.5, y=4, z=4)){
+    x <- b$x + rnorm(N, sd=sigma$x)
+    y <- m[1] * x + b$y + rnorm(N, sd=sigma$y)
+    z <- y - (m[2]*x + b$z) + rnorm(N, sd=sigma$z)
+    tibble(x, y, z)
   }
   
-  simdata <- simulate_data(1e4, c(-4, 5), noise=0.1)
-  write.csv(simdata, filt.path(DATA_DIR, 'confounded_data.csv'))
+  set.seed(1)
+  simdata <- simulate_data(1e3, c(-4, 5))
+  summary(simdata)
+  write.csv(simdata, file.path(DATA_DIR, 'confounded_data.csv'))
 } else {
   simdata <- read.csv(file.path(DATA_DIR,'confounded_data.csv'), stringsAsFactors=FALSE)
 }
@@ -49,8 +56,8 @@ if (TRAIN_MODELS){
   randomForest_A <- randomForest(formula_A, simdata, ntree=15)
   randomForest_B <- randomForest(formula_B, simdata, ntree=15)
   
-  nnet_A <- nnet(formula_A, simdata, size=10, linout=TRUE)
-  nnet_B <- nnet(formula_B, simdata, size=10, linout=TRUE)
+  nnet_A <- nnet(formula_A, simdata, size=10, linout=TRUE, maxit=1e3)
+  nnet_B <- nnet(formula_B, simdata, size=10, linout=TRUE, maxit=1e3)
   
   saveRDS(lm_A, file.path(DATA_DIR, 'lm_A.Rds'))
   saveRDS(lm_B, file.path(DATA_DIR, 'lm_B.Rds'))
@@ -76,22 +83,13 @@ standard_predict <- function(model, test_data){
   }
 }
 
-# plot(simdata$y, standard_predict(nnet_A, simdata), pch='.')
-# points(simdata$y, standard_predict(nnet_B, simdata), pch='.', col='red')
-
-# test1 <- data.frame(x=-0.62, z=5.01)
-
-### Currently, y is perfectly predicted by x + z, because no noise was added
-### We really want the two models A and b to have similar performance.
-
-
 ```
 
 ```{r eruptions, echo=FALSE, message=FALSE, warning=FALSE}
 
-X_LIM <- c(-3, 3)
-Z_LIM <- c(-30, 30)
-Y_LIM <- c(-30, 30)
+X_LIM <- simdata$x %>% range %>% round
+Y_LIM <- simdata$y %>% range %>% round
+Z_LIM <- simdata$z %>% range %>% round
 
 LOGGED_DATA <- data.frame(x=c(), z=c())
 
@@ -100,41 +98,46 @@ MODEL_FORMULAS <- c('A', 'B')
 
 MODEL_NAMES <- paste(MODEL_TYPES, rep(MODEL_FORMULAS, times=length(MODEL_TYPES)), sep='_')
 
+SCENARIO_DESCRIPTION_TEMPLATE <- "<h1>{{scenario_name}} Scenario</h1>
+Here we want to understand the effect of {{x}} on {{y}}, with {{z}} as a potential confounder. Should we adjust for {{z}} in the analysis, or not?
+"
 SCENARIOS <- list(
-  medicine = list(x='drug', y='pain', z='age'),
-  maintenance = list(x='effort', y='uptime', z='technician experience')
+  Medicine = list(x='drug', y='pain', z='age'),
+  Maintenance = list(x='effort', y='uptime', z='technician experience')
 )
 
 inputPanel(
   selectInput("scenario", label="select scenario", choices=names(SCENARIOS), selected=1),
-  
-  selectInput("mode", label="select mode", choices=c('see', 'do'), selected=1),
-  
-  selectInput("model", label = "Select predictive model:",
-              choices = MODEL_NAMES, selected = 2),
-  
-  uiOutput('x_slider_placeholder'),
+
+  selectInput("model", label = "Select predictive model:", choices = MODEL_NAMES, selected = 2),
   
   uiOutput('z_slider_placeholder'),
-  
-  textOutput('outcome')
 
+  uiOutput('x_slider_placeholder')
 )
+
+mainPanel(
+  htmlOutput('scenario_description')
+) 
 
 output$x_slider_placeholder <- renderUI({
   sliderInput("x", label=paste(SCENARIOS[[input$scenario]]$x,':'),
-              min=X_LIM[1], max=X_LIM[2], value= -0.6, step=0.1)
+              min=X_LIM[1], max=X_LIM[2], value= -0.6)
 })
 
 output$z_slider_placeholder <- renderUI({
+  default_z <- round(mean(Z_LIM))
   sliderInput("z", label=paste(SCENARIOS[[input$scenario]]$z,':'),
-              min=Z_LIM[1], max=Z_LIM[2], value=5, step=5)
+              min=Z_LIM[1], max=Z_LIM[2], value=default_z)
 })
 
-output$outcome <- renderText({
-  sprintf('outcome: %s', SCENARIOS[[input$scenario]]$y)
+output$scenario_description <- renderUI({
+  data <- SCENARIOS[[input$scenario]]
+  data$scenario_name <- input$scenario
+  HTML(whisker.render(SCENARIO_DESCRIPTION_TEMPLATE, data))
 })
 
+# input <- list(model='lm_A', x=0.1, z=0.1, scenario='Medicine')
 renderPlot({
   selected_model <- get(input$model)
   input_case <- data.frame(x=input$x, z=input$z, model_name=input$model,
@@ -142,20 +145,34 @@ renderPlot({
   input_case$y <- predicted_outcome <- standard_predict(selected_model, input_case)
   LOGGED_DATA <<- bind_rows(LOGGED_DATA, input_case)
   
-  LOGGED_DATA %>% 
+  predictions <- LOGGED_DATA %>% 
     mutate(model_type=gsub('_.*', '', model_name), model_formula=gsub('.*_', '', model_name)) %>% 
-    arrange(x) %>% 
-    ggplot(aes(x=x, y=y, col=model_type, 
-               shape=model_formula, 
-               linetype=interaction(model_type, model_formula, z))) + 
-    geom_line(size=2) + geom_point(size=4) +
+    arrange(x)
+  
+  simdata %>% 
+    ggplot(aes(x=x, y=y)) +
+    geom_point(aes(fill=z), shape=21, size=4, stroke=0.1, alpha=0.95) +
+    scale_fill_gradient(low="lightblue", high="pink") +
+    geom_line(data=predictions, 
+              mapping=aes(col=model_type,
+                          linetype=interaction(model_type, model_formula, z)),
+              size=1.5) + 
+    geom_point(data=predictions, 
+               mapping=aes(col=model_type, shape=model_formula),
+               size=5) +
     coord_cartesian(xlim=X_LIM, ylim=Y_LIM) +
     labs(x=SCENARIOS[[input$scenario]]$x, 
          y=SCENARIOS[[input$scenario]]$y,
          col='model type') +
     ggtitle(paste(input$scenario, 'scenario'))
+
+    # ggplot(aes(x=x, y=y, col=model_type, 
+    #            shape=model_formula, 
+    #            linetype=interaction(model_type, model_formula, z)))
+
+  # col=interaction(model_type, model_formula)
+
 })
 
 ```
 
-This app plots the predicted outcome (`y`-value) for given inputs (`x` and`z` values). There are three types of models (lm, randomForest, and nnet) and two formulas (formula `A` is `y ~ x` and formula B is `y ~ x + z`).
