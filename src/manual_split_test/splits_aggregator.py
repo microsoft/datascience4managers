@@ -19,6 +19,7 @@ import sys
 import re
 import string
 import time
+from collections import namedtuple
 import numpy as np
 import pandas as pd
 import bokeh as bk
@@ -33,6 +34,8 @@ VERBOSE = False
 DATA_DIR  = os.path.join(os.getcwd() ,'../../shared/') 
 PARQUET_DIR = 'D:\\OneDrive - Microsoft\\data\\20news\\20news-bydate-train\\train_clean'
 GLOB_PATTERN = 'language_selection_tests'
+
+Rule = namedtuple('pattern', 'label')
 
 
 ########################################################################
@@ -81,6 +84,35 @@ class BinaryComparisons(object):
         pair_df.columns = ['label1', 'item1', 'msg1', 'label2', 'item2', 'msg2']
         return pair_df
 
+    def flatten_msg(self, msg):
+        'Concatenate lines to form a single string, removing punctuation.'
+        # Convert array to one text string. 
+        txt = ' '.join(list(msg))
+        # Remove punct. 
+        txt =''.join([k for k in txt if k not in string.punctuation])
+        return txt
+
+    def simulate_splits(self, pair_df):
+        'Find pairs of words that distinguish the pair. '
+        selection_rules = []
+        for r in range(len(pair_df)):
+            row = pair_df.iloc[r,]
+            msg1 = self.flatten_msg(row[2])
+            lbl1 = row[0]
+            msg2 = self.flatten_msg(row[5])
+            lbl2 = row[3]
+            # Cheap heuristic - use the longest word as a candidate classifiers
+            w1 = sorted(msg1.split(), key= lambda w: len(w), reverse=True)
+            w2 = sorted(msg2.split(), key= lambda w: len(w), reverse=True)
+            # Check if the word appears in the opposite sample and fail if it does. 
+            if (w1[0] in msg2.split()) or (w2[0]  in msg1.split()):
+                # return None
+                pass
+            else:
+                return selection_rules.append((w1[0], lbl1, w2[0], lbl2))
+        return selection_rules
+
+
     def embed_in_excel(self):
         'Export ss files that users '
 ########################################################################
@@ -98,7 +130,8 @@ def main(input_dir, glob_pattern):
     cs = BinaryComparisons(PARQUET_DIR)
     print("train: ", cs.full_df.shape)
     pair_df = cs.random_pairs(6)
-    print(pair_df)
+    # print(pair_df)
+    cs.simulate_splits(pair_df)
     return 0
 
 ########################################################################
