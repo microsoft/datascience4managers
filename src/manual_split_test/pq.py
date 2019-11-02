@@ -1,27 +1,46 @@
 # Convert parquet to csv dataframes. 
-import os, os.path, sys
-import glob
+import sys
+#import glob
 import pprint
 import re
+import string
 import time
+from pathlib import Path
 
-PARQUET_PATH = 'D:\\OneDrive - Microsoft\\data\\20news\\20news-bydate-train\\train_clean'
+PARQUET_PATH = 'D:/OneDrive - Microsoft/data/20news/20news-bydate-train/train_clean'
 import pyarrow
 import pandas as pd
 
 def cnvt2csv(PATH):
     try:
         adf = pd.read_parquet(PATH)
-        print(adf.describe())
+        print(PATH, ': ', adf.shape)
+        new_name = Path(PATH.parent) / Path(PATH.stem + '.csv')
+        # create strings from txt lists
+        msg_col = adf['msg']
+        msg_col = msg_col.apply(flatten_msg)
+        item_col = adf['item']
+        item_col = item_col.apply(lambda x: Path(x).name)
+        adf['msg'] = msg_col
+        adf['item'] = item_col
+        adf.to_csv(new_name)
     except Exception as e:
-        print(f"for file {PATH} got exception {e}.")
-    new_name = PATH.replace('parquet', 'csv')
-    adf.to_csv(new_name)
+        print(f"for file {new_name} got exception {e}.")
     print('wrote ', new_name)
 
+def flatten_msg(msg):
+    'Concatenate lines to form a single string, removing punctuation.'
+    # Convert array to one text string. 
+    txt = ' '.join(list(msg))
+    # Remove punct. 
+    txt =''.join([k for k in txt if k not in string.punctuation])
+    return txt
+
 def consolidate_parquet(PATH):
+    'Combine all parquet files into one df'
     full_df = pd.DataFrame()
-    for a_file in glob.glob(os.path.join(PATH, '*.parquet')):
+    globpath =  Path(PATH)
+    for a_file in globpath.glob('*.parquet'):
         try:
             adf = pd.read_parquet(a_file)
         except Exception as e:
@@ -31,3 +50,9 @@ def consolidate_parquet(PATH):
     return full_df
 
 # consolidate_parquet(PARQUET_PATH)
+def cnvt_all(P=Path("C:/Users/joagosta/OneDrive - Microsoft/data/20news/20news-bydate-test/test_clean")):
+    for a_file in Path(P).glob('*.parquet'):
+        cnvt2csv(a_file)
+
+
+cnvt_all()

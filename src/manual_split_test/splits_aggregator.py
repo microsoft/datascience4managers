@@ -10,7 +10,7 @@ $ ./splits_aggregator.py [-v] [-d data_dir] [-g pattern]
     -d data directory to read from
     -g glob pattern for data files
 ''' 
-import os, os.path, sys
+import os, sys
 import glob
 import math
 import pprint
@@ -19,6 +19,7 @@ import sys
 import re
 import string
 import time
+from pathlib import Path
 from collections import namedtuple
 import numpy as np
 import pandas as pd
@@ -31,11 +32,10 @@ __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 
 ### config constants 
 VERBOSE = False
-DATA_DIR  = os.path.join(os.getcwd() ,'../../shared/') 
-PARQUET_DIR = 'D:\\OneDrive - Microsoft\\data\\20news\\20news-bydate-train\\train_clean'
+DATA_DIR  = os.getcwd() / Path('../../shared/')
 GLOB_PATTERN = 'language_selection_tests'
 
-Rule = namedtuple('pattern', 'label')
+Rule = namedtuple('Rule', ['pattern', 'label', 'hits'])
 
 
 ########################################################################
@@ -45,7 +45,7 @@ class CollectSplits(object):
     def __init__(self, glob_pattern, cvs_dir):
         self.tst_lbls = []
         self.as_df = None
-        for data_file in glob.glob(os.path.abspath(os.path.join(cvs_dir, glob_pattern))):
+        for data_file in Path(cvs_dir).glob( glob_pattern):
             try:
                 self.add_file(data_file)
             except Exception as err:
@@ -76,40 +76,34 @@ class BinaryComparisons(object):
                 if labels[0] !=labels[1]:
                     break
             reps +=1
-            print (reps, pair)
-            # pair_df = pd.concat([pair_df, pd.concat([pair.iloc[0,], pair.iloc[1,]], axis=1)], axis=0)
+            if VERBOSE: print (reps, pair)
             row = np.hstack([pair.iloc[0,].values, pair.iloc[1,].values]) 
             pair_df = np.vstack([pair_df, row])
         pair_df = pd.DataFrame(pair_df)
         pair_df.columns = ['label1', 'item1', 'msg1', 'label2', 'item2', 'msg2']
         return pair_df
 
-    def flatten_msg(self, msg):
-        'Concatenate lines to form a single string, removing punctuation.'
-        # Convert array to one text string. 
-        txt = ' '.join(list(msg))
-        # Remove punct. 
-        txt =''.join([k for k in txt if k not in string.punctuation])
-        return txt
-
     def simulate_splits(self, pair_df):
         'Find pairs of words that distinguish the pair. '
         selection_rules = []
         for r in range(len(pair_df)):
             row = pair_df.iloc[r,]
-            msg1 = self.flatten_msg(row[2])
+            msg1 = pq.flatten_msg(row[2])
             lbl1 = row[0]
-            msg2 = self.flatten_msg(row[5])
+            msg2 = pq.flatten_msg(row[5])
             lbl2 = row[3]
             # Cheap heuristic - use the longest word as a candidate classifiers
             w1 = sorted(msg1.split(), key= lambda w: len(w), reverse=True)
             w2 = sorted(msg2.split(), key= lambda w: len(w), reverse=True)
             # Check if the word appears in the opposite sample and fail if it does. 
-            if (w1[0] in msg2.split()) or (w2[0]  in msg1.split()):
-                # return None
-                pass
+            if not (w1[0] in msg2.split()):
+               selection_rules.append(Rule(w1[0], lbl1, None))
             else:
-                return selection_rules.append((w1[0], lbl1, w2[0], lbl2))
+                print('Failed selection rule ', lbl2, ':', w1[0])
+            if not (w2[0]  in msg1.split()):
+               selection_rules.append(Rule(w2[0], lbl2, None))
+            else:
+                print('Failed selection rule ', lbl1, ':', w2[0])
         return selection_rules
 
 
@@ -119,8 +113,17 @@ class BinaryComparisons(object):
 class SplitClassifier (object):
     'Assemble the splits are run them with highest precision lowest coverage first.'
 
-    def __init__(self, path):
+    def __init__(self, rules):
+        self.rules = rules
+
+    def order_by_hits(self, full_df):
+        'Run each rule over all msgs, counting msgs that fire the rule.'
+        # Sort by most specific rules first. 
         pass
+
+    def compute_confusion(self, full_df):
+        'Return the confusion matrix and stats for this classifier.'
+        pass 
 
 ###############################################################################
 def main(input_dir, glob_pattern):
@@ -129,9 +132,11 @@ def main(input_dir, glob_pattern):
     # input_pattern= glob_pattern + '*.csv'
     cs = BinaryComparisons(PARQUET_DIR)
     print("train: ", cs.full_df.shape)
-    pair_df = cs.random_pairs(6)
-    # print(pair_df)
-    cs.simulate_splits(pair_df)
+    pair_df = cs.random_pairs(60)
+    the_splits = cs.simulate_splits(pair_df)
+    # pprint.pprint(the_splits)
+    learner = SplitClassifier(the_splits)
+    learner.order_by_hits(cs.full_df)
     return 0
 
 ########################################################################
@@ -144,13 +149,13 @@ if __name__ == '__main__':
     ## Inputs
     if '-d' in sys.argv:
         d = sys.argv.index('-d')
-        DATA_DIR = os.path.abspath(sys.argv[d+1]) # Assuming the path is relative to the user's home path 
+        PARQUET_DIR = Path(sys.argv[d+1]) # Assuming the path is relative to the user's home path 
     else:
-        DATA_DIR = os.path.abspath(DATA_DIR)
+        PARQUET_DIR = Path(DATA_DIR)
     
     if '-g' in sys.argv:
         g = sys.argv.index('-g')
-        GLOB_PATTERN = sys.argv[g+1]  
+        GLOB_PATTERN = sys.argv[g+1]
 
 
     main(DATA_DIR, GLOB_PATTERN)
