@@ -61,7 +61,7 @@ class CollectSplits(object):
 class BinaryComparisons(object):
     'Randomly pair training cases to find words specific to each class.'
     def __init__(self,data_paths):
-        self.full_df = pq.consolidate_parquet(data_paths)       # 'merge all training data'
+        self.full_df = pq.reload_parquet(data_paths)       # 'merge all training data'
         self.full_df.reset_index()
         
 
@@ -88,9 +88,9 @@ class BinaryComparisons(object):
         selection_rules = []
         for r in range(len(pair_df)):
             row = pair_df.iloc[r,]
-            msg1 = pq.flatten_msg(row[2])
+            msg1 = row[2]
             lbl1 = row[0]
-            msg2 = pq.flatten_msg(row[5])
+            msg2 = row[5]
             lbl2 = row[3]
             # Cheap heuristic - use the longest word as a candidate classifiers
             w1 = sorted(msg1.split(), key= lambda w: len(w), reverse=True)
@@ -118,8 +118,25 @@ class SplitClassifier (object):
 
     def order_by_hits(self, full_df):
         'Run each rule over all msgs, counting msgs that fire the rule.'
+        hits = []
+        match = 0
+        miss = 0
+        for j, a_rule in enumerate(self.rules):
+            for k, v in enumerate(full_df['msg']):
+                if a_rule.pattern in v:
+                #hits = full_df['msg'].apply(lambda x: x if x.values.find('buy') else None )
+                    if a_rule.label == full_df['label'].iloc[k]:
+                        print(k,'-', a_rule.label, ':',a_rule.pattern)
+                        match +=1
+                    else:
+                        #print(a_rule.label, ':',full_df['label'].iloc[k] , end = ' ')
+                        miss +=1
+            #print(sum(hits.values), end = ' ')
+            # print([z for z in hits if z], end=' ')
+            print(f'\n{j}:{a_rule.pattern} Match {match}, miss {miss}.')
+        print(f'\n============\nMatch {match}, miss {miss}.')
         # Sort by most specific rules first. 
-        pass
+
 
     def compute_confusion(self, full_df):
         'Return the confusion matrix and stats for this classifier.'
@@ -131,7 +148,7 @@ def main(input_dir, glob_pattern):
     # Test split pattern extraction
     # input_pattern= glob_pattern + '*.csv'
     cs = BinaryComparisons(PARQUET_DIR)
-    print("train: ", cs.full_df.shape)
+    # print("train: ", cs.full_df.shape)
     pair_df = cs.random_pairs(60)
     the_splits = cs.simulate_splits(pair_df)
     # pprint.pprint(the_splits)

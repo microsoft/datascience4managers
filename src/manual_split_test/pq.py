@@ -49,10 +49,21 @@ def consolidate_parquet(PATH):
     print("Full df:", full_df.shape)
     return full_df
 
+def reload_parquet(PATH):
+    'dont load invidual files if the entire file is there.'
+    full_file = Path(PATH) / 'full_df.parquet'
+    if Path(full_file).exists():
+        return pd.read_parquet(full_file)
+    else:
+        full_df = consolidate_parquet(PATH)
+        full_df['msg'] = full_df['msg'].apply(flatten_msg)
+        full_df.to_parquet(full_file)
+        return full_df
+
 # consolidate_parquet(PARQUET_PATH)
 def cnvt_all(P=Path("C:/Users/joagosta/OneDrive - Microsoft/data/20news/20news-bydate-test/test_clean")):
     for a_file in Path(P).glob('*.parquet'):
         cnvt2csv(a_file)
 
 
-cnvt_all()
+# cnvt_all()
