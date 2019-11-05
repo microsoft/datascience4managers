@@ -78,7 +78,7 @@ class BinaryComparisons(object):
                 if labels[0] !=labels[1]:
                     break
             reps +=1
-            if VERBOSE: print (reps, pair)
+            # if VERBOSE: print (reps, pair)
             row = np.hstack([pair.iloc[0,].values, pair.iloc[1,].values]) 
             pair_df = np.vstack([pair_df, row])
         pair_df = pd.DataFrame(pair_df)
@@ -99,11 +99,11 @@ class BinaryComparisons(object):
             w2 = sorted(msg2.split(), key= lambda w: len(w), reverse=True)
             # Check if the word appears in the opposite sample and fail if it does. 
             if not (w1[0] in msg2.split()):
-               selection_rules.append(Rule(w1[0], lbl1, None))
+               selection_rules.append(Rule(w1[0], lbl1, 0))
             else:
                 print('Failed selection rule ', lbl2, ':', w1[0])
             if not (w2[0]  in msg1.split()):
-               selection_rules.append(Rule(w2[0], lbl2, None))
+               selection_rules.append(Rule(w2[0], lbl2, 0))
             else:
                 print('Failed selection rule ', lbl1, ':', w2[0])
         return selection_rules
@@ -122,11 +122,9 @@ class BinaryComparisons(object):
             a_pair = pairs.iloc[k,]
             comp.iloc[ss["group1"]] = a_pair['label1'] # ['label1', 'item1', 'msg1', 'label2', 'item2', 'msg2']
             comp.iloc[ss["group2"]] = a_pair['label2']
-            #comp.iloc[ss["pattern1"]]
-            #comp.iloc[ss["pattern2"]]
             comp.iloc[ss["sample1"]] = a_pair['msg1']
             comp.iloc[ss["sample2"]] = a_pair['msg2']
-            if True:
+            if VERBOSE:
                 for vals in ss.values():
                     print(comp.iloc[vals])
             case_fn = Path(SHARED_DIR) / (str(a_pair["item1"]) + '-' + str(a_pair["item2"]) + '.csv')
@@ -142,22 +140,21 @@ class SplitClassifier (object):
     def order_by_hits(self, full_df):
         'Run each rule over all msgs, counting msgs that fire the rule.'
         # TODO count the number of hits over all samples for each rule. 
-        hits = []
+        hits = [0] * len(self.rules)
         match = 0
         miss = 0
         for j, a_rule in enumerate(self.rules):
             for k, v in enumerate(full_df['msg']):
                 if a_rule.pattern in v:
-                #hits = full_df['msg'].apply(lambda x: x if x.values.find('buy') else None )
+                    # Add a count of how many times the rule matches
+                    hits[j] += 1  
                     if a_rule.label == full_df['label'].iloc[k]:
                         print(k,'-', a_rule.label, ':',a_rule.pattern)
                         match +=1
                     else:
                         #print(a_rule.label, ':',full_df['label'].iloc[k] , end = ' ')
                         miss +=1
-            #print(sum(hits.values), end = ' ')
-            # print([z for z in hits if z], end=' ')
-            print(f'\n{j}:{a_rule.pattern} Match {match}, miss {miss}.')
+            print(f'\n{j}:{a_rule.pattern} Match {match}, miss {miss}, hits {hits[j]}.')
         print(f'\n============\nMatch {match}, miss {miss}.')
         # Sort by most specific rules first. 
 
@@ -167,14 +164,14 @@ class SplitClassifier (object):
         pass 
 
 ###############################################################################
-def main(input_dir, glob_pattern):
+def main(input_dir):
 
     # Test split pattern extraction
     # input_pattern= glob_pattern + '*.csv'
     cs = BinaryComparisons(PARQUET_DIR)
     # print("train: ", cs.full_df.shape)
     pair_df = cs.random_pairs(60)
-    the_splits = cs.simulate_splits(pair_df)
+    the_splits = cs.simulate_splits(pair_df)  # Creates simulated rules. 
     # pprint.pprint(the_splits)
     learner = SplitClassifier(the_splits)
     learner.order_by_hits(cs.full_df)
@@ -194,12 +191,11 @@ if __name__ == '__main__':
     else:
         PARQUET_DIR = Path(DATA_DIR)
     
-    if '-g' in sys.argv:
-        g = sys.argv.index('-g')
-        GLOB_PATTERN = sys.argv[g+1]
+    # if '-g' in sys.argv:
+    #     g = sys.argv.index('-g')
+    #     GLOB_PATTERN = sys.argv[g+1]
 
-
-    main(DATA_DIR, GLOB_PATTERN)
+    main(DATA_DIR)
     print(sys.argv, "\nDone in ", '%5.3f' % time.process_time(), " secs! At UTC: ", time.asctime(time.gmtime()), file=sys.stderr)
 
 #EOF

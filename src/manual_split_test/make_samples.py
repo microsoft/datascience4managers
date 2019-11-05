@@ -42,7 +42,7 @@ class CreateNewsGroupsData(object):
                 if VERBOSE:
                     print('For msg: ', sample_file, ' Found', pruned_contents)
                 if pruned_contents[0] > 1:
-                    self.train_df.append((self.label, str(sample_file), pruned_contents[1]))  ##TODO -extract item number from sample file
+                    self.train_df.append((self.label, str(sample_file), pruned_contents[1]))  ## TODO - use Pathlib instead
             else:
                 if VERBOSE: 
                     print('No file found: ', file_path)
@@ -97,6 +97,7 @@ class CreateNewsGroupsData(object):
 
 
     def persist(self):
+        ' Create individual parquet files for each msg class'
         print(f'\nIn {self.label}, {len(self.train_df)} records found.')
         the_df = pd.DataFrame(self.train_df)
         the_df.columns = ('label', 'item', 'msg')
@@ -115,6 +116,7 @@ def main(input_dir, glob_pattern):
     msg_ds = CreateNewsGroupsData(input_dir, glob_pattern) 
     if VERBOSE: 
         pprint.pprint(msg_ds.train_df)
+    # TODO - run both train and test. 
     msg_ds.persist()
 
 

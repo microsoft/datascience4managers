@@ -38,9 +38,6 @@ def main(input_dir, pair_cnt):
     if VERBOSE:
         print("Pairs: ", pairs_df.shape)
     cs.embed_in_excel(pairs_df)
-    #     pprint.pprint(msg_ds.train_df)
-    # msg_ds.persist()
-
 
 
 ########################################################################
@@ -54,8 +51,8 @@ if __name__ == '__main__':
     if '-d' in sys.argv:
         d = sys.argv.index('-d')
         PARQUET_DIR = sys.argv[d+1] # Assuming the path is relative to the user's home path 
-    else:
-        PARQUET_DIR = os.path.abspath(PARQUET_DIR)
+ #   else:
+ #       PARQUET_DIR = os.path.abspath(PARQUET_DIR)
     
     if '-c' in sys.argv:
         g = sys.argv.index('-c')
