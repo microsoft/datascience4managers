@@ -1,0 +1,12 @@
+﻿Language selection test,,,,
+,,,,
+Input selection strings for this pair of discussion groups sample. ,,,,
+,,,,
+,Group name,,group1,group2
+,Selection string,,"""pattern1""","""pattern2"""
+,,,,
+,samples,,sample1,sample2
+,,,,
+,,,,
+Instructions:,,,,
+"Choose a character string that can be used as a condition to uniquely identify the topic specific to that column, and distinguishes it from the topic in the other column.  This ""selection string"" should be characteristic to  the text in the column, and specific only to that column, and its appearance in a sentence clearly distinguishes which topic  it comes from. You can put the selection string in double quotes so that you can embed spaces or other ascii characters. ",,,,

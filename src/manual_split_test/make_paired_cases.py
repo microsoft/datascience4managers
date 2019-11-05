@@ -5,10 +5,10 @@
 Write a short description of what the program does here. 
 
 Usage:
-$ ./make_samples.py [-v] [-d SAMPLES_DIR] [-g pattern]
+$ ./make_samples.py [-v] [-d PARQUET_DIR] [-c pair_cnt]
     -v verbose output
     -d data directory to read from
-    -g glob pattern for data files
+    -c number of randomly paired cases to generate
 ''' 
 import os, os.path, sys
 import glob
@@ -22,18 +22,22 @@ import splits_aggregator as sa
 ### config constants 
 VERBOSE = False
 PARQUET_DIR  = 'D:/OneDrive - Microsoft/data/20news/20news-bydate-train', # Need not end in /
-GLOB_PATTERN = '*'
+# SHARED_DIR  = Path('../../shared/')
+PAIR_CNT = 1
 
 ########################################################################
 class x(object):
-    'Prune the newsgroups text to create a labelled table.'
+    ''
     pass
 
 ###############################################################################
-def main(input_dir, glob_pattern):
+def main(input_dir, pair_cnt):
 
-    cs = sa.BinaryComparisons(PARQUET_DIR)
-    # if VERBOSE: 
+    cs = sa.BinaryComparisons(input_dir)
+    pairs_df = cs.random_pairs(pair_cnt)
+    if VERBOSE:
+        print("Pairs: ", pairs_df.shape)
+    cs.embed_in_excel(pairs_df)
     #     pprint.pprint(msg_ds.train_df)
     # msg_ds.persist()
 
@@ -53,11 +57,11 @@ if __name__ == '__main__':
     else:
         PARQUET_DIR = os.path.abspath(PARQUET_DIR)
     
-    if '-g' in sys.argv:
-        g = sys.argv.index('-g')
-        GLOB_PATTERN = sys.argv[g+1]  
+    if '-c' in sys.argv:
+        g = sys.argv.index('-c')
+        PAIR_CNT= int(sys.argv[g+1]) 
 
-    main(PARQUET_DIR, GLOB_PATTERN)
+    main(PARQUET_DIR, PAIR_CNT)
 
     print(sys.argv, "\nDone in ", 
             '%5.3f' % time.process_time(), 

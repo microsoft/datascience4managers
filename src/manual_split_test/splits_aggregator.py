@@ -11,6 +11,7 @@ $ ./splits_aggregator.py [-v] [-d data_dir] [-g pattern]
     -g glob pattern for data files
 ''' 
 import os, sys
+import copy
 import glob
 import math
 import pprint
@@ -32,8 +33,9 @@ __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 
 ### config constants 
 VERBOSE = False
-DATA_DIR  = os.getcwd() / Path('../../shared/')
-GLOB_PATTERN = 'language_selection_tests'
+DATA_DIR  = Path('../../shared/')  # ?! TODO
+SHARED_DIR  = '../../shared/'
+# GLOB_PATTERN = 'language_selection_tests'
 
 Rule = namedtuple('Rule', ['pattern', 'label', 'hits'])
 
@@ -107,8 +109,29 @@ class BinaryComparisons(object):
         return selection_rules
 
 
-    def embed_in_excel(self):
-        'Export ss files that users '
+    def embed_in_excel(self, pairs, groups_template = Path('../../template/pairwise_comparisions.csv')):
+        'Export ss files with examples of pair-wise comparisons that users can fill in and submit. '
+        ss = dict(group1 = (4,3), group2=(4,4), pattern1=(5,3), pattern2=(5,4), sample1=(7,3), sample2=(7,4))
+        if groups_template.exists():
+            the_template= pd.read_csv(groups_template, header=None )
+        else:
+            print(groups_template, " not found", file=sys.stderr)
+            return None
+        for k in range(len(pairs)):
+            comp = copy.copy(the_template)
+            a_pair = pairs.iloc[k,]
+            comp.iloc[ss["group1"]] = a_pair['label1'] # ['label1', 'item1', 'msg1', 'label2', 'item2', 'msg2']
+            comp.iloc[ss["group2"]] = a_pair['label2']
+            #comp.iloc[ss["pattern1"]]
+            #comp.iloc[ss["pattern2"]]
+            comp.iloc[ss["sample1"]] = a_pair['msg1']
+            comp.iloc[ss["sample2"]] = a_pair['msg2']
+            if True:
+                for vals in ss.values():
+                    print(comp.iloc[vals])
+            case_fn = Path(SHARED_DIR) / (str(a_pair["item1"]) + '-' + str(a_pair["item2"]) + '.csv')
+            comp.to_csv(case_fn, header=False, index=False )
+
 ########################################################################
 class SplitClassifier (object):
     'Assemble the splits are run them with highest precision lowest coverage first.'
@@ -118,6 +141,7 @@ class SplitClassifier (object):
 
     def order_by_hits(self, full_df):
         'Run each rule over all msgs, counting msgs that fire the rule.'
+        # TODO count the number of hits over all samples for each rule. 
         hits = []
         match = 0
         miss = 0

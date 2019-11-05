@@ -1,0 +1,12 @@
+﻿Language selection test,,,,
+,,,,
+Input selection strings for this language pair sample. ,,,,
+,,,,
+,Language,,Pinyin,US_English
+,selection string,,"""ao ""","""nd """
+,,,,
+,sample one,,bù gǎn dǎ gěi nǐ wǒ zhǎo bù dào yuán yīn,"I don't dare to call you, I can't seem to find a reason to."
+,sample two ,,wèi shén me shī mián de shēng yīn biàn dé hǎo shú xī,"Why has the sound of insomnia, become so familiar?"
+,,,,
+Instructions:,,,,
+"Choose a character string that can be used as a condition to uniquely identify the language specific to that column, and distinguishes it from the language in the other column.  This ""selection string"" should be common to both examples in the column, and specific only to that column, and its appearance in a sentence clearly distinguishes which language it comes from. Put the selection string in double quotes so that you can embed spaces or other ascii characters. ",,,,
