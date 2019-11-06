@@ -28,6 +28,7 @@ import bokeh as bk
 from bokeh.io import output_file, show
 from bokeh.models import ColumnDataSource, FixedTicker, PrintfTickFormatter
 from bokeh.plotting import figure
+from sklearn.metrics import confusion_matrix
 import pq
 __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 
@@ -149,7 +150,7 @@ class SplitClassifier (object):
                     # Add a count of how many times the rule matches
                     hits[j] += 1  
                     if a_rule.label == full_df['label'].iloc[k]:
-                        print(k,'-', a_rule.label, ':',a_rule.pattern)
+                        if VERBOSE: print(k,'-', a_rule.label, ':',a_rule.pattern)
                         match +=1
                     else:
                         #print(a_rule.label, ':',full_df['label'].iloc[k] , end = ' ')
@@ -161,7 +162,21 @@ class SplitClassifier (object):
 
     def compute_confusion(self, full_df):
         'Return the confusion matrix and stats for this classifier.'
-        pass 
+        # Run the ruleset over the sample item until a rule fires
+        # Then record the class of the rule.
+        predicted_labels = len(full_df)*["None"]
+        for k, content in enumerate(full_df['msg']):
+            for j, a_rule in enumerate(self.rules):
+                if a_rule.pattern in content:
+                    predicted_labels[k] = a_rule.label
+                    break
+        # print("compute_confusion", len([x for x in predicted_labels if x is not None]), len(full_df))
+        true_y = list(full_df["label"])
+        class_names = list(set(true_y))
+        class_names.append("None")
+        cm = confusion_matrix(true_y, predicted_labels, class_names) 
+        print(cm)
+        # print("Accuracy", sum(cm()))
 
 ###############################################################################
 def main(input_dir):
@@ -175,6 +190,7 @@ def main(input_dir):
     # pprint.pprint(the_splits)
     learner = SplitClassifier(the_splits)
     learner.order_by_hits(cs.full_df)
+    learner.compute_confusion(cs.full_df)
     return 0
 
 ########################################################################
