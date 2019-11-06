@@ -28,7 +28,7 @@ import bokeh as bk
 from bokeh.io import output_file, show
 from bokeh.models import ColumnDataSource, FixedTicker, PrintfTickFormatter
 from bokeh.plotting import figure
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 import pq
 __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 
@@ -107,6 +107,14 @@ class BinaryComparisons(object):
                selection_rules.append(Rule(w2[0], lbl2, 0))
             else:
                 print('Failed selection rule ', lbl1, ':', w2[0])
+            if not (w1[1] in msg2.split()):
+               selection_rules.append(Rule(w1[1], lbl1, 0))
+            else:
+                print('Failed selection rule ', lbl2, ':', w1[1])
+            if not (w2[1]  in msg1.split()):
+               selection_rules.append(Rule(w2[1], lbl2, 0))
+            else:
+                print('Failed selection rule ', lbl1, ':', w2[1])
         return selection_rules
 
 
@@ -173,10 +181,19 @@ class SplitClassifier (object):
         # print("compute_confusion", len([x for x in predicted_labels if x is not None]), len(full_df))
         true_y = list(full_df["label"])
         class_names = list(set(true_y))
-        class_names.append("None")
+        #class_names.append("None")
         cm = confusion_matrix(true_y, predicted_labels, class_names) 
-        print(cm)
-        # print("Accuracy", sum(cm()))
+        #cm = cm[0:19,0:19]
+        print(cm) 
+        print(class_names)
+        diagonal = sum([cm[x,x] for x in range(len(class_names))])
+        totals = sum(sum(cm))
+        print("Accuracy=", diagonal, ' / ', totals, ' = ', diagonal/totals)
+        prfs = precision_recall_fscore_support(true_y, predicted_labels, labels=class_names)
+        prfs_df = pd.DataFrame.from_dict(dict(prec= prfs[0],recall=prfs[1],F=prfs[2], sup=prfs[3], nms=class_names) )
+        prfs_df.set_index('nms', inplace=True)
+        print(prfs_df)
+
 
 ###############################################################################
 def main(input_dir):
@@ -185,7 +202,7 @@ def main(input_dir):
     # input_pattern= glob_pattern + '*.csv'
     cs = BinaryComparisons(PARQUET_DIR)
     # print("train: ", cs.full_df.shape)
-    pair_df = cs.random_pairs(60)
+    pair_df = cs.random_pairs(350)
     the_splits = cs.simulate_splits(pair_df)  # Creates simulated rules. 
     # pprint.pprint(the_splits)
     learner = SplitClassifier(the_splits)
@@ -211,6 +228,7 @@ if __name__ == '__main__':
     #     g = sys.argv.index('-g')
     #     GLOB_PATTERN = sys.argv[g+1]
 
+    np.set_printoptions(linewidth=100)
     main(DATA_DIR)
     print(sys.argv, "\nDone in ", '%5.3f' % time.process_time(), " secs! At UTC: ", time.asctime(time.gmtime()), file=sys.stderr)
 
