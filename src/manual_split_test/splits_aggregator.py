@@ -194,6 +194,55 @@ class SplitClassifier (object):
         prfs_df.set_index('nms', inplace=True)
         print(prfs_df)
 
+# Input - any matrix with labeled rows and cols as a pd.DataFrame
+def matrix_heatmap(the_matrix):
+    'Create a bokeh graphic with matrix cells colored by value. Or use bokeh "heatmap".'
+    # 
+    from bokeh.io import output_file, show
+    from bokeh.models import BasicTicker, ColorBar, LinearColorMapper, ColumnDataSource, PrintfTickFormatter
+    from bokeh.plotting import figure
+    from bokeh.transform import transform
+    # pandas 'stack' is equivalent to R reshape gather, or melt from reshape2, from wide to long format. 
+    # Prepare data.frame in the right format
+    df = the_matrix.stack().rename("value").reset_index()
+
+    #  The plot output:
+    output_file("myPlot.html")
+
+    # You can use your own palette here
+    colors = ['#d7191c', '#fdae61', '#ffffbf', '#a6d96a', '#1a9641']
+
+    # Had a specific mapper to map color with value
+    mapper = LinearColorMapper(
+        palette=colors, low=df.value.min(), high=df.value.max())
+    # Define a figure
+    p = figure(
+        plot_width=800,
+        plot_height=300,
+        title="My plot",
+        x_range=list(df.Treatment.drop_duplicates()),
+        y_range=list(df.Prediction.drop_duplicates()),
+        toolbar_location=None,
+        tools="",
+        x_axis_location="above")
+    # Create rectangle for heatmap
+    p.rect(
+        x="Treatment",
+        y="Prediction",
+        width=1,
+        height=1,
+        source=ColumnDataSource(df),
+        line_color=None,
+        fill_color=transform('value', mapper))
+    # Add legend
+    color_bar = ColorBar(
+        color_mapper=mapper,
+        location=(0, 0),
+        ticker=BasicTicker(desired_num_ticks=len(colors)))
+
+    p.add_layout(color_bar, 'right')
+
+
 
 ###############################################################################
 def main(input_dir):
