@@ -53,7 +53,7 @@ def reload_parquet(PATH):
     'dont load invidual files if the entire file is there.'
     full_file = Path(PATH) / 'full_df.parquet'
     if Path(full_file).exists():
-        print(f"Reloaded {full_file.name}")
+        print(f"Reloaded {full_file.name}", file=sys.stderr)
         return pd.read_parquet(full_file)
     else:
         full_df = consolidate_parquet(PATH)

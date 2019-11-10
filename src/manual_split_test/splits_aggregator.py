@@ -6,9 +6,11 @@ Write a short description of what the program does here.
 
 Usage:
 $ ./splits_aggregator.py [-v] [-d data_dir] [-g pattern]
-    -v verbose output
+    -v verbose output (more than normal)
     -d data directory to read from
-    -g glob pattern for data files
+    -q quiet output (less than normal)
+    -r rules per sample (how deep into the sample sorted words)
+    -p Rule pairs 
 ''' 
 import os, sys
 import copy
@@ -36,7 +38,9 @@ __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 VERBOSE = False
 DATA_DIR  = Path('../../shared/')  # ?! TODO
 SHARED_DIR  = '../../shared/'
-# GLOB_PATTERN = 'language_selection_tests'
+QUIET = True
+RULES_PER_SAMPLE = 1
+RULE_PAIRS =400
 
 Rule = namedtuple('Rule', ['pattern', 'label', 'hits'])
 
@@ -58,7 +62,7 @@ class CollectSplits(object):
     def add_file(self, the_fname):
         self.as_df = pd.read_csv(the_fname, header=None )
         self.tst_lbls.append((self.as_df.iloc[5,3], self.as_df.iloc[5,4]))
-        print("Data dim: ", self.as_df.shape)
+        if not QUIET: print("Data dim: ", self.as_df.shape)
 
 ########################################################################
 class BinaryComparisons(object):
@@ -79,7 +83,6 @@ class BinaryComparisons(object):
                 if labels[0] !=labels[1]:
                     break
             reps +=1
-            # if VERBOSE: print (reps, pair)
             row = np.hstack([pair.iloc[0,].values, pair.iloc[1,].values]) 
             pair_df = np.vstack([pair_df, row])
         pair_df = pd.DataFrame(pair_df)
@@ -98,23 +101,19 @@ class BinaryComparisons(object):
             # Cheap heuristic - use the longest word as a candidate classifiers
             w1 = sorted(msg1.split(), key= lambda w: len(w), reverse=True)
             w2 = sorted(msg2.split(), key= lambda w: len(w), reverse=True)
+            # Create rules out of the first RULES_PER_SAMPLE words
+            for k in range(RULES_PER_SAMPLE):
             # Check if the word appears in the opposite sample and fail if it does. 
-            if not (w1[0] in msg2.split()):
-               selection_rules.append(Rule(w1[0], lbl1, 0))
-            else:
-                print('Failed selection rule ', lbl2, ':', w1[0])
-            if not (w2[0]  in msg1.split()):
-               selection_rules.append(Rule(w2[0], lbl2, 0))
-            else:
-                print('Failed selection rule ', lbl1, ':', w2[0])
-            if not (w1[1] in msg2.split()):
-               selection_rules.append(Rule(w1[1], lbl1, 0))
-            else:
-                print('Failed selection rule ', lbl2, ':', w1[1])
-            if not (w2[1]  in msg1.split()):
-               selection_rules.append(Rule(w2[1], lbl2, 0))
-            else:
-                print('Failed selection rule ', lbl1, ':', w2[1])
+                if not (w1[k] in msg2.split()):
+                    selection_rules.append(Rule(w1[k], lbl1, 0))
+                else:
+                    print('Failed selection rule ', lbl2, ':', w1[k], file=sys.stderr)
+                if not (w2[k]  in msg1.split()):
+                    selection_rules.append(Rule(w2[k], lbl2, 0))
+                else:
+                    print('Failed selection rule ', lbl1, ':', w2[k], file=sys.stderr)
+        # if not QUIET: 
+        print(len(selection_rules), " selection rules.")
         return selection_rules
 
 
@@ -163,9 +162,9 @@ class SplitClassifier (object):
                     else:
                         #print(a_rule.label, ':',full_df['label'].iloc[k] , end = ' ')
                         miss +=1
-            print(f'\n{j}:{a_rule.pattern} Match {match}, miss {miss}, hits {hits[j]}.')
-        print(f'\n============\nMatch {match}, miss {miss}.')
-        # Sort by most specific rules first. 
+            if not QUIET: print(f'\n{j}:{a_rule.pattern} Match {match}, miss {miss}, hits {hits[j]}.')
+        print(f'\n============\nMatch {match}, miss {miss}, TOT {match+miss}.')
+        # TODO Sort by most specific rules first. 
 
 
     def compute_confusion(self, full_df):
@@ -178,19 +177,22 @@ class SplitClassifier (object):
                 if a_rule.pattern in content:
                     predicted_labels[k] = a_rule.label
                     break
-        # print("compute_confusion", len([x for x in predicted_labels if x is not None]), len(full_df))
         true_y = list(full_df["label"])
         class_names = list(set(true_y))
-        #class_names.append("None")
         cm = confusion_matrix(true_y, predicted_labels, class_names) 
-        #cm = cm[0:19,0:19]
-        print(cm) 
-        print(class_names)
+        # Accuracy
         diagonal = sum([cm[x,x] for x in range(len(class_names))])
         totals = sum(sum(cm))
-        print("Accuracy=", diagonal, ' / ', totals, ' = ', diagonal/totals)
+        print("Accuracy on matches =", diagonal, ' / ', totals, ' = ', diagonal/totals)
+        cm = pd.DataFrame(cm, index=class_names)
+        print(cm) 
         prfs = precision_recall_fscore_support(true_y, predicted_labels, labels=class_names)
         prfs_df = pd.DataFrame.from_dict(dict(prec= prfs[0],recall=prfs[1],F=prfs[2], sup=prfs[3], nms=class_names) )
+        # Compute macro averages
+        colsums = np.sum(prfs_df.values, axis=0)
+        colavgs = list(colsums[0:4]/len(prfs_df))
+        colavgs.append("AVGS")
+        prfs_df = prfs_df.append(pd.DataFrame([colavgs], columns= ['prec', 'recall', 'F', 'sup', 'nms']))# 
         prfs_df.set_index('nms', inplace=True)
         print(prfs_df)
 
@@ -250,10 +252,9 @@ def main(input_dir):
     # Test split pattern extraction
     # input_pattern= glob_pattern + '*.csv'
     cs = BinaryComparisons(PARQUET_DIR)
-    # print("train: ", cs.full_df.shape)
-    pair_df = cs.random_pairs(350)
+    pair_df = cs.random_pairs(RULE_PAIRS)
     the_splits = cs.simulate_splits(pair_df)  # Creates simulated rules. 
-    # pprint.pprint(the_splits)
+    if VERBOSE: pprint.pprint(the_splits)
     learner = SplitClassifier(the_splits)
     learner.order_by_hits(cs.full_df)
     learner.compute_confusion(cs.full_df)
@@ -273,9 +274,17 @@ if __name__ == '__main__':
     else:
         PARQUET_DIR = Path(DATA_DIR)
     
-    # if '-g' in sys.argv:
-    #     g = sys.argv.index('-g')
-    #     GLOB_PATTERN = sys.argv[g+1]
+    if '-q' in sys.argv:
+        q = sys.argv.index('-q')
+        QUIET = True
+
+    if '-r' in sys.argv:
+        r = sys.argv.index('-r')
+        RULES_PER_SAMPLE = int(sys.argv[r+1])
+
+    if '-p' in sys.argv:
+        p = sys.argv.index('-p')
+        RULE_PAIRS = int(sys.argv[r+1])
 
     np.set_printoptions(linewidth=100)
     main(DATA_DIR)
