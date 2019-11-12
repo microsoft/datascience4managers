@@ -2,7 +2,7 @@
 # Oct 2019  JMA
 # splits_aggregator.py  write scale events to mongoDB
 '''
-Write a short description of what the program does here. 
+Run a simulation of interactive incremental classification.
 
 Usage:
 $ ./splits_aggregator.py [-v] [-d data_dir] [-g pattern]
@@ -36,23 +36,25 @@ __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 
 ### config constants 
 VERBOSE = False
-DATA_DIR  = Path('../../shared/')  # ?! TODO
-SHARED_DIR  = '../../shared/'
+DATA_DIR  = Path('D:/OneDrive - Microsoft/data/20news/20news-bydate-train/train_clean')  # Parquet files are found here. 
+SHARED_DIR  = Path('../../shared/')  # Write source ss for users here.
 QUIET = True
 RULES_PER_SAMPLE = 1
 RULE_PAIRS =400
 
 Rule = namedtuple('Rule', ['pattern', 'label', 'hits'])
+ss = dict(group1 = (4,3), group2=(4,4), pattern1=(5,3), pattern2=(5,4), sample1=(7,3), sample2=(7,4))
+
 
 
 ########################################################################
 class CollectSplits(object):
     'Collect csv files from participants and aggregate.' 
     
-    def __init__(self, glob_pattern, cvs_dir):
-        self.tst_lbls = []
-        self.as_df = None
-        for data_file in Path(cvs_dir).glob( glob_pattern):
+    def __init__(self, cvs_dir, glob_pattern = '*.csv'):
+        self.user_rules = []
+        #self.as_df = None
+        for data_file in cvs_dir.glob( glob_pattern):
             try:
                 self.add_file(data_file)
             except Exception as err:
@@ -60,9 +62,15 @@ class CollectSplits(object):
 
 
     def add_file(self, the_fname):
+        'convert ss to rule'
         self.as_df = pd.read_csv(the_fname, header=None )
-        self.tst_lbls.append((self.as_df.iloc[5,3], self.as_df.iloc[5,4]))
-        if not QUIET: print("Data dim: ", self.as_df.shape)
+        #patterns = (self.as_df.iloc[ss['pattern1']], self.as_df.iloc[ss['pattern2']])  # comp.iloc[ss["group1"]]
+        # Create rules out of the pattens. 
+        rule1 = Rule(self.as_df.iloc[ss['pattern1']],  self.as_df.iloc[ss['group1']], 0)
+        rule2 = Rule(self.as_df.iloc[ss['pattern2']],  self.as_df.iloc[ss['group2']], 0)
+        self.user_rules.append(rule1)
+        self.user_rules.append(rule2)
+        if VERBOSE: print("Rule patterns: ", rule1, rule2)
 
 ########################################################################
 class BinaryComparisons(object):
@@ -88,6 +96,7 @@ class BinaryComparisons(object):
         pair_df = pd.DataFrame(pair_df)
         pair_df.columns = ['label1', 'item1', 'msg1', 'label2', 'item2', 'msg2']
         return pair_df
+
 
     def simulate_splits(self, pair_df):
         'Find pairs of words that distinguish the pair. '
@@ -195,6 +204,8 @@ class SplitClassifier (object):
         prfs_df = prfs_df.append(pd.DataFrame([colavgs], columns= ['prec', 'recall', 'F', 'sup', 'nms']))# 
         prfs_df.set_index('nms', inplace=True)
         print(prfs_df)
+        # matrix_heatmap(prfs_df)
+        return dict(accuracy=diagonal/totals, precision=colavgs[0], recall=colavgs[1]) 
 
 # Input - any matrix with labeled rows and cols as a pd.DataFrame
 def matrix_heatmap(the_matrix):
@@ -250,12 +261,12 @@ def matrix_heatmap(the_matrix):
 def main(input_dir):
 
     # Test split pattern extraction
-    # input_pattern= glob_pattern + '*.csv'
+
     cs = BinaryComparisons(PARQUET_DIR)
     pair_df = cs.random_pairs(RULE_PAIRS)
-    the_splits = cs.simulate_splits(pair_df)  # Creates simulated rules. 
-    if VERBOSE: pprint.pprint(the_splits)
-    learner = SplitClassifier(the_splits)
+    the_rules = cs.simulate_splits(pair_df)  # Creates simulated rules. 
+    if VERBOSE: pprint.pprint(the_rules)
+    learner = SplitClassifier(the_rules)
     learner.order_by_hits(cs.full_df)
     learner.compute_confusion(cs.full_df)
     return 0
@@ -284,7 +295,7 @@ if __name__ == '__main__':
 
     if '-p' in sys.argv:
         p = sys.argv.index('-p')
-        RULE_PAIRS = int(sys.argv[r+1])
+        RULE_PAIRS = int(sys.argv[p+1])
 
     np.set_printoptions(linewidth=100)
     main(DATA_DIR)

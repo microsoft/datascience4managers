@@ -1,4 +1,7 @@
-# Convert parquet to csv dataframes. 
+#  Utility data handling, 
+# - Convert parquet to csv dataframes.
+# - Consolidate parquet data files. 
+# - load parquet 
 import sys
 #import glob
 import pprint
