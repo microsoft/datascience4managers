@@ -10,17 +10,18 @@ $ ./make_samples.py [-v] [-d SAMPLES_DIR] [-g pattern]
     -d data directory to read from
     -g glob pattern for data files
 ''' 
-import os, os.path, sys
+import os, sys # os.path, sys
 import glob
 import pprint
 import re
 import time
+from pathlib import Path
 import pyarrow
 import pandas as pd
 
 ### config constants 
 VERBOSE = False
-SAMPLES_DIR  = 'D:/OneDrive - Microsoft/data/20news/20news-bydate-train', # Need not end in /
+ROOT_DIR  = Path('D:/OneDrive - Microsoft/data/20news') 
 GLOB_PATTERN = '*'
 
 ########################################################################
@@ -131,16 +132,16 @@ if __name__ == '__main__':
     ## Inputs
     if '-d' in sys.argv:
         d = sys.argv.index('-d')
-        SAMPLES_DIR = sys.argv[d+1] # Assuming the path is relative to the user's home path 
+        SAMPLES_DIR = Path(sys.argv[d+1]) / '20news-bydate-train' # TODO also must run over test. 
     else:
-        SAMPLES_DIR = os.path.abspath(SAMPLES_DIR)
+        SAMPLES_DIR = ROOT_DIR / '20news-bydate-train'
     
     if '-g' in sys.argv:
         g = sys.argv.index('-g')
         GLOB_PATTERN = sys.argv[g+1]  
 
-    for a_dir in glob.glob(os.path.join(SAMPLES_DIR, '*')):  # TODO this fails when it begins to iterate over parquet files. 
-        main(os.path.join(SAMPLES_DIR, a_dir), GLOB_PATTERN)
+    for a_dir in SAMPLES_DIR.glob('*'):  # TODO this fails when it begins to iterate over parquet files. 
+        main(a_dir, GLOB_PATTERN)
 
     print(sys.argv, "\nDone in ", 
             '%5.3f' % time.process_time(), 

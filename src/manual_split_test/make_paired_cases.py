@@ -5,24 +5,25 @@
 Write a short description of what the program does here. 
 
 Usage:
-$ ./make_samples.py [-v] [-d PARQUET_DIR] [-c pair_cnt]
+$ ./make_samples.py [-v] [-d ROOT_DIR] [-c pair_cnt]
     -v verbose output
     -d data directory to read from
     -c number of randomly paired cases to generate
 ''' 
-import os, os.path, sys
+import os, sys
 import glob
 import pprint
 import re
 import time
+from pathlib import Path
 import pyarrow
 import pandas as pd
 import splits_aggregator as sa
 
 ### config constants 
 VERBOSE = False
-PARQUET_DIR  = 'D:/OneDrive - Microsoft/data/20news/20news-bydate-train', # Need not end in /
-# SHARED_DIR  = Path('../../shared/')
+ROOT_DIR = Path('D:/OneDrive - Microsoft/data/20news')
+
 PAIR_CNT = 1
 
 ########################################################################
@@ -50,15 +51,15 @@ if __name__ == '__main__':
     ## Inputs
     if '-d' in sys.argv:
         d = sys.argv.index('-d')
-        PARQUET_DIR = sys.argv[d+1] # Assuming the path is relative to the user's home path 
+        ROOT_DIR = Path(sys.argv[d+1])
  #   else:
- #       PARQUET_DIR = os.path.abspath(PARQUET_DIR)
+
     
     if '-c' in sys.argv:
         g = sys.argv.index('-c')
         PAIR_CNT= int(sys.argv[g+1]) 
 
-    main(PARQUET_DIR, PAIR_CNT)
+    main(ROOT_DIR, PAIR_CNT)
 
     print(sys.argv, "\nDone in ", 
             '%5.3f' % time.process_time(), 

@@ -5,9 +5,9 @@
 Run a simulation of interactive incremental classification.
 
 Usage:
-$ ./splits_aggregator.py [-v] [-d data_dir] [-g pattern]
+$ ./splits_aggregator.py [-v] [-d root_dir] [-g pattern]
     -v verbose output (more than normal)
-    -d data directory to read from
+    -d root directory to read from
     -q quiet output (less than normal)
     -r rules per sample (how deep into the sample sorted words)
     -p Rule pairs 
@@ -36,8 +36,10 @@ __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 
 ### config constants 
 VERBOSE = False
-DATA_DIR  = Path('D:/OneDrive - Microsoft/data/20news/20news-bydate-train/train_clean')  # Parquet files are found here. 
-SHARED_DIR  = Path('../../shared/')  # Write source ss for users here.
+ROOT_DIR = Path('D:/OneDrive - Microsoft/data/20news')
+# DATA_DIR  = Path('D:/OneDrive - Microsoft/data/20news/20news-bydate-train/train_clean')  # Parquet files are found here. 
+# TEST_PATH =  Path('D:/OneDrive - Microsoft/data/20news/20news-bydate-test/test_clean')  # Parquet files are found here. 
+# SHARED_DIR  = Path('../../shared/')  # Write source ss for users here.
 QUIET = True
 RULES_PER_SAMPLE = 1
 RULE_PAIRS =400
@@ -89,8 +91,15 @@ class CollectSplits(object):
 ########################################################################
 class BinaryComparisons(object):
     'Randomly pair training cases to find words specific to each class.'
-    def __init__(self,data_paths):
-        self.full_df = pq.reload_parquet(data_paths)       # 'merge all training data'
+    def __init__(self, input_dir):
+        self.patterns_dir  = input_dir / 'patterns'
+        self.rules_dir = input_dir / 'rules'
+        # check that the shared and rules directories have been created. 
+        if not self.patterns_dir.exists():
+            self.patterns_dir.mkdir()
+        if not self.rules_dir.exists():
+            self.rules_dir.mkdir()
+        self.full_df = pq.reload_parquet(input_dir / 'train_clean')       # 'merge all training data'
         self.full_df.reset_index()
         
 
@@ -127,11 +136,11 @@ class BinaryComparisons(object):
             # Create rules out of the first RULES_PER_SAMPLE words
             for k in range(RULES_PER_SAMPLE):
             # Check if the word appears in the opposite sample and fail if it does. 
-                if not (w1[k] in msg2.split()):
+                if len(w1) > 0 and not (w1[k] in msg2.split()):
                     selection_rules.append(Rule(w1[k], lbl1, 0))
                 else:
                     print('Failed selection rule ', lbl2, ':', w1[k], file=sys.stderr)
-                if not (w2[k]  in msg1.split()):
+                if len(w2) and not (w2[k]  in msg1.split()):
                     selection_rules.append(Rule(w2[k], lbl2, 0))
                 else:
                     print('Failed selection rule ', lbl1, ':', w2[k], file=sys.stderr)
@@ -142,7 +151,7 @@ class BinaryComparisons(object):
 
     def embed_in_excel(self, pairs, groups_template = Path('../../template/pairwise_comparisions.csv')):
         'Export ss files with examples of pair-wise comparisons that users can fill in and submit. '
-        ss = dict(group1 = (4,3), group2=(4,4), pattern1=(5,3), pattern2=(5,4), sample1=(7,3), sample2=(7,4))
+        # ss = dict(group1 = (4,3), group2=(4,4), pattern1=(5,3), pattern2=(5,4), sample1=(7,3), sample2=(7,4))
         if groups_template.exists():
             the_template= pd.read_csv(groups_template, header=None )
         else:
@@ -158,7 +167,7 @@ class BinaryComparisons(object):
             if VERBOSE:
                 for vals in ss.values():
                     print(comp.iloc[vals])
-            case_fn = Path(SHARED_DIR) / (str(a_pair["item1"]) + '-' + str(a_pair["item2"]) + '.csv')
+            case_fn = self.patterns_dir / (str(a_pair["item1"]) + '-' + str(a_pair["item2"]) + '.csv')
             comp.to_csv(case_fn, header=False, index=False )
 
 ########################################################################
@@ -219,7 +228,7 @@ class SplitClassifier (object):
         prfs_df.set_index('nms', inplace=True)
         print(prfs_df)
         # matrix_heatmap(prfs_df)
-        return dict(accuracy=diagonal/totals, precision=colavgs[0], recall=colavgs[1]) 
+        return [diagonal/totals, colavgs[0], colavgs[1]]# dict(accuracy=diagonal/totals, precision=colavgs[0], recall=colavgs[1]) 
 
 # Input - any matrix with labeled rows and cols as a pd.DataFrame
 def matrix_heatmap(the_matrix):
@@ -276,13 +285,16 @@ def main(input_dir):
 
     # Test split pattern extraction
 
-    cs = BinaryComparisons(PARQUET_DIR)
+    cs = BinaryComparisons(input_dir)
     pair_df = cs.random_pairs(RULE_PAIRS)
     the_rules = cs.simulate_splits(pair_df)  # Creates simulated rules. 
     if VERBOSE: pprint.pprint(the_rules)
     learner = SplitClassifier(the_rules)
-    learner.order_by_hits(cs.full_df)
+    # learner.order_by_hits(cs.full_df)
     learner.compute_confusion(cs.full_df)
+    # Do the same for the test data
+    test_df = pq.reload_parquet(input_dir / 'test_clean')
+    learner.compute_confusion(test_df)
     return 0
 
 ########################################################################
@@ -295,9 +307,9 @@ if __name__ == '__main__':
     ## Inputs
     if '-d' in sys.argv:
         d = sys.argv.index('-d')
-        PARQUET_DIR = Path(sys.argv[d+1]) # Assuming the path is relative to the user's home path 
-    else:
-        PARQUET_DIR = Path(DATA_DIR)
+        ROOT_DIR = Path(sys.argv[d+1]) # Assuming the path is relative to the user's home path 
+    # else:
+    #     ROOT_DIR = Path(DATA_DIR)
     
     if '-q' in sys.argv:
         q = sys.argv.index('-q')
@@ -312,7 +324,7 @@ if __name__ == '__main__':
         RULE_PAIRS = int(sys.argv[p+1])
 
     np.set_printoptions(linewidth=100)
-    main(DATA_DIR)
+    main(ROOT_DIR)
     print(sys.argv, "\nDone in ", '%5.3f' % time.process_time(), " secs! At UTC: ", time.asctime(time.gmtime()), file=sys.stderr)
 
 #EOF

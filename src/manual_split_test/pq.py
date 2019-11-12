@@ -10,15 +10,16 @@ import string
 import time
 from pathlib import Path
 
-PARQUET_PATH = 'D:/OneDrive - Microsoft/data/20news/20news-bydate-train/train_clean'
+ROOT_PATH = Path('D:/OneDrive - Microsoft/data/20news') # /20news-bydate-train/train_clean'
 import pyarrow
 import pandas as pd
 
-def cnvt2csv(PATH):
+def cnvt2csv(path):
+    'path = path to the train_clean directory'
     try:
-        adf = pd.read_parquet(PATH)
-        print(PATH, ': ', adf.shape)
-        new_name = Path(PATH.parent) / Path(PATH.stem + '.csv')
+        adf = pd.read_parquet(path)
+        print(path, ': ', adf.shape)
+        new_name = Path(path.parent) / Path(path.stem + '.csv')
         # create strings from txt lists
         msg_col = adf['msg']
         msg_col = msg_col.apply(flatten_msg)
@@ -39,10 +40,10 @@ def flatten_msg(msg):
     txt =''.join([k for k in txt if k not in string.punctuation])
     return txt
 
-def consolidate_parquet(PATH):
+def consolidate_parquet(path):
     'Combine all parquet files into one df'
     full_df = pd.DataFrame()
-    globpath =  Path(PATH)
+    globpath =  Path(path)
     for a_file in globpath.glob('*.parquet'):
         try:
             adf = pd.read_parquet(a_file)
@@ -52,21 +53,21 @@ def consolidate_parquet(PATH):
     print("Full df:", full_df.shape)
     return full_df
 
-def reload_parquet(PATH):
+def reload_parquet(path):
     'dont load invidual files if the entire file is there.'
-    full_file = Path(PATH) / 'full_df.parquet'
+    full_file = Path(path) / 'full_df.parquet'
     if Path(full_file).exists():
         print(f"Reloaded {full_file.name}", file=sys.stderr)
         return pd.read_parquet(full_file)
     else:
-        full_df = consolidate_parquet(PATH)
+        full_df = consolidate_parquet(path)
         full_df['msg'] = full_df['msg'].apply(flatten_msg)
         full_df['item'] = full_df['item'].apply(lambda x: Path(x).name)
         full_df.to_parquet(full_file)
         return full_df
 
-# consolidate_parquet(PARQUET_PATH)
-def cnvt_all(P=Path("C:/Users/joagosta/OneDrive - Microsoft/data/20news/20news-bydate-test/test_clean")):
+# convert tests 
+def cnvt_all(P = ROOT_PATH / "test_clean"):
     for a_file in Path(P).glob('*.parquet'):
         cnvt2csv(a_file)
 
