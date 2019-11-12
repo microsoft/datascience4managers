@@ -31,6 +31,7 @@ __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 VERBOSE = False
 RULES_PER_SAMPLE = 1
 RULE_PAIRS =40
+SS_SUFFIX = '*.csv'
 
 INTERACTIVE_RULE_PAIRS = 0     # Create this many templates for users
 SHARED_DIR  = Path('../../shared/')    # Users grab a file from here
@@ -53,18 +54,23 @@ def main(rules_dir, run_interactive):
     # Load the test set
     # full_ds = pq.reload_parquet(data_paths) 
     summary_df = pd.DataFrame()
+    user_rule_cnt = 0 
     while run_interactive:
-        users = sa.CollectSplits(rules_dir)
-        the_rules.extend(users.user_rules)  # combine lists
-        if VERBOSE: pprint.pprint(the_rules)
-        # Evaluate the ruleset and display. 
-        learner = sa.SplitClassifier(the_rules)
-        # TODO run this on both train and test sets. 
-        learner.order_by_hits(cs.full_df)
-        summary = learner.compute_confusion(cs.full_df)
-        summary_df = summary_df.append(pd.DataFrame([summary]))
         # Check if the rules directory has any new files, then continue. 
-        run_interactive = False
+        new_rule_cnt = len(list(rules_dir.glob( SS_SUFFIX)))
+        if new_rule_cnt > user_rule_cnt:
+            users = sa.CollectSplits(rules_dir, SS_SUFFIX)
+            the_rules.extend(users.user_rules)  # combine lists
+            if VERBOSE: pprint.pprint(the_rules)
+            # Evaluate the ruleset and display. 
+            learner = sa.SplitClassifier(the_rules)
+            # TODO run this on both train and test sets. 
+            learner.order_by_hits(cs.full_df)
+            summary = learner.compute_confusion(cs.full_df)
+            summary_df = summary_df.append(pd.DataFrame([summary]))
+            user_rule_cnt = new_rule_cnt
+        else:
+            time.sleep(2.0)
     print(summary_df)
     return 0
 

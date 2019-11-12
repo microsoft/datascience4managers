@@ -54,7 +54,8 @@ class CollectSplits(object):
     def __init__(self, cvs_dir, glob_pattern = '*.csv'):
         self.user_rules = []
         #self.as_df = None
-        for data_file in cvs_dir.glob( glob_pattern):
+        for k, data_file in enumerate(cvs_dir.glob( glob_pattern)):
+            print(k,':', end = ' ')
             try:
                 self.add_file(data_file)
             except Exception as err:
@@ -66,11 +67,24 @@ class CollectSplits(object):
         self.as_df = pd.read_csv(the_fname, header=None )
         #patterns = (self.as_df.iloc[ss['pattern1']], self.as_df.iloc[ss['pattern2']])  # comp.iloc[ss["group1"]]
         # Create rules out of the pattens. 
-        rule1 = Rule(self.as_df.iloc[ss['pattern1']],  self.as_df.iloc[ss['group1']], 0)
-        rule2 = Rule(self.as_df.iloc[ss['pattern2']],  self.as_df.iloc[ss['group2']], 0)
-        self.user_rules.append(rule1)
-        self.user_rules.append(rule2)
-        if VERBOSE: print("Rule patterns: ", rule1, rule2)
+        try:
+            rule1 = Rule(self.get_cell('pattern1'),  self.get_cell('group1'), 0)
+            self.user_rules.append(rule1)
+            rule2 = Rule(self.get_cell('pattern2'),  self.get_cell('group2'), 0)
+            self.user_rules.append(rule2)
+            if VERBOSE: 
+                print("Rule patterns: ", rule1, rule2)
+        except ValueError:
+            print(the_fname, " corrupt contents", file=sys.stderr)
+
+    def get_cell(self, cell_name):
+        cell = self.as_df.iloc[ss[cell_name]]
+        if (type(cell) is str) and (len(cell) > 2):
+            cell =  cell.strip('"\'')
+            return cell
+        else:
+            raise ValueError
+
 
 ########################################################################
 class BinaryComparisons(object):
