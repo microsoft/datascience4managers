@@ -27,26 +27,23 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 import bokeh as bk
-from bokeh.io import output_file, show
-from bokeh.models import ColumnDataSource, FixedTicker, PrintfTickFormatter
+from bokeh.io import output_file, save, show
+from bokeh.models import  BasicTicker, ColorBar, LinearColorMapper, ColumnDataSource, FixedTicker, PrintfTickFormatter
 from bokeh.plotting import figure
 from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
+from bokeh.transform import transform
 import pq
 __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 
 ### config constants 
 VERBOSE = False
 ROOT_DIR = Path('D:/OneDrive - Microsoft/data/20news')
-# DATA_DIR  = Path('D:/OneDrive - Microsoft/data/20news/20news-bydate-train/train_clean')  # Parquet files are found here. 
-# TEST_PATH =  Path('D:/OneDrive - Microsoft/data/20news/20news-bydate-test/test_clean')  # Parquet files are found here. 
-# SHARED_DIR  = Path('../../shared/')  # Write source ss for users here.
 QUIET = True
 RULES_PER_SAMPLE = 1
 RULE_PAIRS =400
 
 Rule = namedtuple('Rule', ['pattern', 'label', 'hits'])
 ss = dict(group1 = (4,3), group2=(4,4), pattern1=(5,3), pattern2=(5,4), sample1=(7,3), sample2=(7,4))
-
 
 
 ########################################################################
@@ -151,7 +148,6 @@ class BinaryComparisons(object):
 
     def embed_in_excel(self, pairs, groups_template = Path('../../template/pairwise_comparisions.csv')):
         'Export ss files with examples of pair-wise comparisons that users can fill in and submit. '
-        # ss = dict(group1 = (4,3), group2=(4,4), pattern1=(5,3), pattern2=(5,4), sample1=(7,3), sample2=(7,4))
         if groups_template.exists():
             the_template= pd.read_csv(groups_template, header=None )
         else:
@@ -227,19 +223,15 @@ class SplitClassifier (object):
         prfs_df = prfs_df.append(pd.DataFrame([colavgs], columns= ['prec', 'recall', 'F', 'sup', 'nms']))# 
         prfs_df.set_index('nms', inplace=True)
         print(prfs_df)
-        # matrix_heatmap(prfs_df)
+        matrix_heatmap(prfs_df)
         return [diagonal/totals, colavgs[0], colavgs[1]]# dict(accuracy=diagonal/totals, precision=colavgs[0], recall=colavgs[1]) 
 
 # Input - any matrix with labeled rows and cols as a pd.DataFrame
 def matrix_heatmap(the_matrix):
     'Create a bokeh graphic with matrix cells colored by value. Or use bokeh "heatmap".'
-    # 
-    from bokeh.io import output_file, show
-    from bokeh.models import BasicTicker, ColorBar, LinearColorMapper, ColumnDataSource, PrintfTickFormatter
-    from bokeh.plotting import figure
-    from bokeh.transform import transform
     # pandas 'stack' is equivalent to R reshape gather, or melt from reshape2, from wide to long format. 
     # Prepare data.frame in the right format
+    the_matrix.drop(['F', 'sup'], axis=1, inplace=True)
     df = the_matrix.stack().rename("value").reset_index()
 
     #  The plot output:
@@ -253,18 +245,18 @@ def matrix_heatmap(the_matrix):
         palette=colors, low=df.value.min(), high=df.value.max())
     # Define a figure
     p = figure(
-        plot_width=800,
-        plot_height=300,
+        plot_width=300,
+        plot_height=800,
         title="My plot",
-        x_range=list(df.Treatment.drop_duplicates()),
-        y_range=list(df.Prediction.drop_duplicates()),
+        y_range=list(df.nms.drop_duplicates()),
+        x_range=list(df.level_1.drop_duplicates()),
         toolbar_location=None,
         tools="",
         x_axis_location="above")
     # Create rectangle for heatmap
     p.rect(
-        x="Treatment",
-        y="Prediction",
+        y="nms",
+        x="level_1",
         width=1,
         height=1,
         source=ColumnDataSource(df),
@@ -277,6 +269,7 @@ def matrix_heatmap(the_matrix):
         ticker=BasicTicker(desired_num_ticks=len(colors)))
 
     p.add_layout(color_bar, 'right')
+    show(p)
 
 
 
