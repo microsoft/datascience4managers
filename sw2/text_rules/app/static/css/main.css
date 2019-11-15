@@ -1,0 +1,63 @@
+    body {
+      margin: 10;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      color: #444;
+    }
+    /*
+     * Formatting the header area
+     */
+    header {
+      background-color: #ccf;
+      height: 35px;
+      width: 100%;
+      opacity: .9;
+      margin-bottom: 25px;
+    }
+
+    /*
+     * Centering the body content
+     */
+    .container {
+      width: 800px;
+      margin: 0 auto;
+    }
+	.messages {
+		background-color: #ffa;
+	}
+    h1 {
+      font-size: 3em;
+      margin-top: 40px;
+      text-align: center;
+      letter-spacing: -2px;
+    }
+    .menu {
+      float: left;
+      margin-top: 16px;
+    }
+    .menu li {
+      display: inline;
+    }
+	
+	dl {
+		width: 100%;
+		overflow: hidden;
+		background: #eef;
+		padding: 0;
+		margin: 10
+	}
+	dt {
+		float: left;
+		text-align: right;
+		font-weight: bold;
+		width: 15%; /* make sure the total of dt and dd width is 100% */
+		border: 1px blask;
+		padding: 0;
+		margin: 0
+	}
+	dd {
+		float: left;
+		width: 85%; /* make sure the total of dt and dd width is 100% */
+		padding: 0;
+		margin: 0
+	}
