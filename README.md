@@ -1,11 +1,10 @@
 ---
-page_type: sample
+page_type: workshop
 languages:
-- csharp
+- python, sql, r
 products:
-- dotnet
+- Personalizer Service, App Services
 description: "Add 150 character max description"
-urlFragment: "update-this-to-unique-url-stub"
 ---
 
 # Official Microsoft Sample
