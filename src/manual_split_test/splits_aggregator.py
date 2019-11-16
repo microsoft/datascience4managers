@@ -12,7 +12,7 @@ $ ./splits_aggregator.py [-v] [-d root_dir] [-g pattern]
     -r rules per sample (how deep into the sample sorted words)
     -p Rule pairs 
 ''' 
-import os, sys
+import os
 import copy
 import glob
 import math
@@ -26,12 +26,8 @@ from pathlib import Path
 from collections import namedtuple
 import numpy as np
 import pandas as pd
-import bokeh as bk
-from bokeh.io import output_file, save, show
-from bokeh.models import  BasicTicker, ColorBar, LinearColorMapper, ColumnDataSource, FixedTicker, PrintfTickFormatter
-from bokeh.plotting import figure
-from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
-from bokeh.transform import transform
+# import bokeh as bk
+import metric_graphics as mg
 import pq
 __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 
@@ -223,54 +219,8 @@ class SplitClassifier (object):
         prfs_df = prfs_df.append(pd.DataFrame([colavgs], columns= ['prec', 'recall', 'F', 'sup', 'nms']))# 
         prfs_df.set_index('nms', inplace=True)
         print(prfs_df)
-        matrix_heatmap(prfs_df)
+        mg.matrix_heatmap(prfs_df)
         return [diagonal/totals, colavgs[0], colavgs[1]]# dict(accuracy=diagonal/totals, precision=colavgs[0], recall=colavgs[1]) 
-
-# Input - any matrix with labeled rows and cols as a pd.DataFrame
-def matrix_heatmap(the_matrix):
-    'Create a bokeh graphic with matrix cells colored by value. Or use bokeh "heatmap".'
-    # pandas 'stack' is equivalent to R reshape gather, or melt from reshape2, from wide to long format. 
-    # Prepare data.frame in the right format
-    the_matrix.drop(['F', 'sup'], axis=1, inplace=True)
-    df = the_matrix.stack().rename("value").reset_index()
-
-    #  The plot output:
-    output_file("myPlot.html")
-
-    # You can use your own palette here
-    colors = ['#d7191c', '#fdae61', '#ffffbf', '#a6d96a', '#1a9641']
-
-    # Had a specific mapper to map color with value
-    mapper = LinearColorMapper(
-        palette=colors, low=df.value.min(), high=df.value.max())
-    # Define a figure
-    p = figure(
-        plot_width=300,
-        plot_height=800,
-        title="My plot",
-        y_range=list(df.nms.drop_duplicates()),
-        x_range=list(df.level_1.drop_duplicates()),
-        toolbar_location=None,
-        tools="",
-        x_axis_location="above")
-    # Create rectangle for heatmap
-    p.rect(
-        y="nms",
-        x="level_1",
-        width=1,
-        height=1,
-        source=ColumnDataSource(df),
-        line_color=None,
-        fill_color=transform('value', mapper))
-    # Add legend
-    color_bar = ColorBar(
-        color_mapper=mapper,
-        location=(0, 0),
-        ticker=BasicTicker(desired_num_ticks=len(colors)))
-
-    p.add_layout(color_bar, 'right')
-    show(p)
-
 
 
 ###############################################################################
