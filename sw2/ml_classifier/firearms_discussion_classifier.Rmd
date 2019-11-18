@@ -1,0 +1,165 @@
+---
+title: "Firearms Discussion Classifier"
+author: "Bob Horton"
+date: "11/16/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Here we use the 20-Newsgroups dataset to build a multiclassifier classifier, then use it to detect posts related to firearms. Specifically, we want to use the classifier scores to distinguish posts in `talk.politics.guns` versus posts from all the other newsgroups. For a more difficult problem, we will try to distinguish posts in `talk.politics.guns` from posts in `talk.politics.misc`.
+
+
+```{r load_libraries, message=FALSE}
+library(dplyr)
+library(MicrosoftML)
+library(ROCR)
+library(pROC)
+library(ggplot2)
+```
+
+```{r load_data}
+DATA_DIR <- "text_classification_data"
+DATA_FILES <- list(train="train_clean.tsv", test="test_clean.tsv")
+
+data_sets <- DATA_FILES %>% lapply(function(fname){
+  read.delim(file.path(DATA_DIR, fname), stringsAsFactors=FALSE, quote='')
+})
+
+newsgroups <- unique(data_sets$train$label)
+
+data_sets <- data_sets %>% lapply(function(df){
+  df$label = factor(df$label, levels=newsgroups)
+  df
+})
+
+```
+
+```{r all_vs_all_classifier}
+
+xforms <- list(
+  featurizeText(
+    vars = c(msg_features="msg"),
+    wordFeatureExtractor=ngramCount(ngramLength=1, maxNumTerms=5e5),
+    # wordFeatureExtractor=ngramHash(ngramLength=4, hashBits=21),
+    stopwordsRemover=stopwordsDefault(), keepPunctuations=FALSE
+  )
+)
+
+ALPHA <- 0.01
+LAMBDA <- 0.5 
+L1_WEIGHT <- ALPHA * LAMBDA
+L2_WEIGHT <- (1 - ALPHA) * LAMBDA
+
+aa_logreg <- rxLogisticRegression(
+    formula = label ~ msg_features,
+    type = "multiClass", data = data_sets$train,
+    l1Weight=L1_WEIGHT, l2Weight=L2_WEIGHT,
+    mlTransforms=xforms)
+
+aa_coef <- coef(aa_logreg)
+
+aa_scores <- rxPredict(aa_logreg, data_sets$test, extraVarsToWrite='label')
+
+plot_roc_for_newsgroup <- function(scores_df, newsgroup_name){
+  score_col <- sprintf('Score.%s', newsgroup_name)
+  score <- scores_df[[score_col]]
+  label <- scores_df$label == newsgroup_name
+  pred_obj <- prediction(score, label)
+  roc_obj <- performance(pred_obj, 'tpr', 'fpr')
+  auc <- performance(pred_obj, 'auc')@y.values[[1]]
+  plot(roc_obj, main=newsgroup_name)
+  abline(0, 1, lty=3, col='blue')
+  text(0.6, 0.2, sprintf('AUC: %0.3f', auc))
+}
+
+```
+
+```{r plot_roc_curves}
+
+for (newsgroup in newsgroups){
+  plot_roc_for_newsgroup(aa_scores, newsgroup)
+  aa_coef[grepl(newsgroup, names(aa_coef))] %>% head(20) %>% print
+}
+
+```
+
+## Confusion Matrix
+
+```{r confusion_matrix}
+M <- with(aa_scores, table(label, PredictedLabel)) %>% as.matrix
+
+sum(M * diag(nrow(M)))/sum(M) # accuracy
+
+column_totals <- aa_scores %>% 
+  group_by(label) %>% 
+  summarize(col_total=n())
+
+aa_scores %>% 
+  select(label, PredictedLabel) %>% 
+  group_by(label, PredictedLabel) %>% 
+  summarize(frequency=n()) %>% 
+  left_join(column_totals, by='label') %>% 
+  mutate(relative_frequency = frequency/col_total) %>% 
+  ggplot(aes(x=label, y=PredictedLabel, fill=relative_frequency)) + 
+    geom_tile() +
+    scale_x_discrete(name="Actual Class") + 
+    scale_y_discrete(name="Predicted Class") + 
+    theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5)) +
+  scale_fill_gradient(low="white", high="darkorange") + labs(fill="Relative Frequency")
+
+```
+
+## Guns vs. Politics
+
+
+How well can we distinguish posts in `talk.politics.guns` from posts in `talk.politics.misc`?
+
+```{r guns_vs_misc}
+keepers <- c('talk.politics.guns', 'talk.politics.misc')
+
+guns_and_misc <- aa_scores %>% 
+  filter(label %in% keepers) %>% 
+  select(label, Score.talk.politics.guns, Score.talk.politics.misc) %>% 
+  mutate(label=factor(as.character(label))) %>% 
+  arrange(desc(Score.talk.politics.guns/Score.talk.politics.misc))
+
+roc1 <- with(guns_and_misc, roc(label, Score.talk.politics.guns))
+auc(roc1)
+
+roc2 <- with(guns_and_misc, roc(label, (Score.talk.politics.guns/Score.talk.politics.misc)))
+auc(roc2)
+
+# add a very small bit of noise to avoid ties
+roc3 <- with(guns_and_misc, roc(label, (Score.talk.politics.guns/Score.talk.politics.misc)+rnorm(nrow(guns_and_misc), sd=0.0001)))
+auc(roc3)
+
+
+
+pred_obj <- with(guns_and_misc, ROCR::prediction(
+  (Score.talk.politics.guns/Score.talk.politics.misc)+rnorm(nrow(guns_and_misc), sd=0.0001),
+  label=='talk.politics.guns'
+))
+
+perf_roc <- ROCR::performance(pred_obj, 'tpr', 'fpr')
+
+ss3 <- data.frame(TPR=perf_roc@y.values[[1]][-1],
+                  FPR=perf_roc@x.values[[1]][-1],
+                  label=guns_and_misc$label=='talk.politics.guns')
+
+ss3 %>% ggplot(aes(x=FPR, y=TPR, col=label)) + geom_point(alpha=0.5)
+
+plot(perf_roc)
+with(ss3, points(FPR, TPR, col=ifelse(label, 'red', 'black'), pch=20))
+abline(0, 1, lty=3, col='blue')
+
+
+```
+
+```{r save_guns_roc, eval=FALSE, echo=FALSE}
+guns_roc <- with(aa_scores, roc(label=='talk.politics.guns', Score.talk.politics.guns))
+plot(guns_roc, print.auc=TRUE)
+saveRDS(guns_roc, 'guns_roc.Rds')
+```
