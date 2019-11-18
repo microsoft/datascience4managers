@@ -27,6 +27,7 @@ from pathlib import Path
 import colorama as cl
 import pandas as pd
 import splits_aggregator as sa
+import extract_rules as er
 import pq 
 __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 
@@ -62,15 +63,16 @@ def main(root_dir, run_interactive):
     Reset = False 
     while run_interactive:
         # Check if the rules directory has any new files, then continue. 
-        new_rule_cnt = len(list(rules_dir.glob( SS_SUFFIX)))
+        # new_rule_cnt = len(list(rules_dir.glob( SS_SUFFIX)))
+        new_rule_cnt = 0
         if new_rule_cnt > user_rule_cnt:
             Reset = False
-            users = sa.CollectSplits(rules_dir, SS_SUFFIX)
-            the_rules.extend(users.user_rules)  # combine lists
+            #users = sa.CollectSplits(rules_dir, SS_SUFFIX)
+            user_rules = er.extract_rules()
+            the_rules.extend(user_rules)  # combine lists
             if VERBOSE: pprint.pprint(the_rules)
             # Evaluate the ruleset and display. 
             learner = sa.SplitClassifier(the_rules)
-            # TODO run this on both train and test sets. 
             # learner.order_by_hits(cs.full_df)  # Don't need to tune the rules 
             summary_train = learner.compute_confusion(cs.full_df)
             # Do the same for the test data

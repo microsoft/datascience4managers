@@ -27,6 +27,7 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 # import bokeh as bk
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 import metric_graphics as mg
 import pq
 __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
@@ -80,6 +81,8 @@ class CollectSplits(object):
         else:
             raise ValueError
 
+
+########################################################################
 
 ########################################################################
 class BinaryComparisons(object):
@@ -219,7 +222,7 @@ class SplitClassifier (object):
         prfs_df = prfs_df.append(pd.DataFrame([colavgs], columns= ['prec', 'recall', 'F', 'sup', 'nms']))# 
         prfs_df.set_index('nms', inplace=True)
         print(prfs_df)
-        mg.matrix_heatmap(prfs_df)
+        # mg.matrix_heatmap(prfs_df)
         return [diagonal/totals, colavgs[0], colavgs[1]]# dict(accuracy=diagonal/totals, precision=colavgs[0], recall=colavgs[1]) 
 
 
