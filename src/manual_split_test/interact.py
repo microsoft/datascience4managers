@@ -68,7 +68,7 @@ def main(root_dir, run_interactive):
         if new_rule_cnt > user_rule_cnt:
             Reset = False
             #users = sa.CollectSplits(rules_dir, SS_SUFFIX)
-            user_rules = er.extract_rules()
+            user_rules = erb.extract_rules()
             the_rules.extend(user_rules)  # combine lists
             if VERBOSE: pprint.pprint(the_rules)
             # Evaluate the ruleset and display. 

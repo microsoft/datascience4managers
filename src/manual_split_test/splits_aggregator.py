@@ -34,7 +34,7 @@ __author__ = 'John Mark Agosta john-mark.agosta@microsoft.com'
 
 ### config constants 
 VERBOSE = False
-ROOT_DIR = Path('D:/OneDrive - Microsoft/data/20news')
+ROOT_DIR = Path('C:/Users/joagosta/OneDrive - Microsoft/data/20news')
 QUIET = True
 RULES_PER_SAMPLE = 1
 RULE_PAIRS =400
@@ -212,7 +212,10 @@ class SplitClassifier (object):
         totals = sum(sum(cm))
         print("Accuracy on matches =", diagonal, ' / ', totals, ' = ', diagonal/totals)
         cm = pd.DataFrame(cm, index=class_names)
-        print(cm) 
+        if VERBOSE:
+            print(cm) 
+        #cm.to_csv(Path(ROOT_DIR) /  f"cm{'%.3f' % (diagonal/totals)}.csv")
+        cm.to_csv(Path(ROOT_DIR) /  f"cm.csv")
         prfs = precision_recall_fscore_support(true_y, predicted_labels, labels=class_names)
         prfs_df = pd.DataFrame.from_dict(dict(prec= prfs[0],recall=prfs[1],F=prfs[2], sup=prfs[3], nms=class_names) )
         # Compute macro averages
@@ -221,7 +224,8 @@ class SplitClassifier (object):
         colavgs.append("AVGS")
         prfs_df = prfs_df.append(pd.DataFrame([colavgs], columns= ['prec', 'recall', 'F', 'sup', 'nms']))# 
         prfs_df.set_index('nms', inplace=True)
-        print(prfs_df)
+        if VERBOSE:
+            print(prfs_df)
         # mg.matrix_heatmap(prfs_df)
         return [diagonal/totals, colavgs[0], colavgs[1]]# dict(accuracy=diagonal/totals, precision=colavgs[0], recall=colavgs[1]) 
 
