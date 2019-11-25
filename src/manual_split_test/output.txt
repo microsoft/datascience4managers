@@ -1,0 +1,56 @@
+Reloaded full_df.parquet
+100  selection rules.
+Accuracy on matches = 500  /  5755  =  0.08688097306689835
+                          0   1   2   3   4   5   6   7   8    9   10  11  12  13  14  15  16  17  18  19
+comp.graphics              0   0  18   8   0   0   0  13  85   50  39   0  24   0   0  17   0   3   0  31
+rec.autos                  0   0  20  11   0   3   0  14  49   90  11   0  41   0   0  52   0   0   0  28
+misc.forsale               0   0  30   2   0   0   0   3  33   28  12   0  10   0   0  28   0   0   0  17
+alt.atheism                0   0   9  11   0   2   2  18  33   80   3   0  34   0   0  33   0  10   0  20
+sci.space                  0   0  23  10   0   1   0   9  67   86   9   0  27   0   5  37   0   0   0  24
+sci.med                    0   0  27  21   0   2  13  18  52  102   3   0  35   0   2  34   0   7   0  36
+talk.politics.misc         0   0  16  10   0   0   3   9  34   98   2   0  22   0   2  26   0   0   0  15
+talk.religion.misc         0   0  10  11   0   0   0  11  19   56   1   0  23   0   0  26   0  38   0  16
+rec.sport.baseball         0   0  16  18   0   2   6   8  47   79   9   0  38   0   2  42   0   0   0  22
+rec.motorcycles            0   0  11  13   0   1   0   9  30   84   6   0  28   0   1  37   0   0   0  15
+comp.os.ms-windows.misc    0   0   7  10   0   3   0   6  76   52  98   0  24   0   0  14   0   1   0  48
+talk.politics.guns         0   0  12  21   0   0   1   9  41   81   4   0  35   0   7  40   0   3   0  22
+sci.crypt                  0   0  19  19   0   1   1  13  45   91  25   0  41   0   2  42   0   1   0  22
+comp.windows.x             0   0   5   6   0   1   0   7  59   53  67   0  30   0   0  14   0   2   0  42
+comp.sys.mac.hardware      0   0  18   8   0   5   0  13  60   70  33   0  26   0   1  21   0   2   0  63
+talk.politics.mideast      0   0  23  11   0   2   0   8  39   84   3   0  29   0   3  36   0   5   0  20
+rec.sport.hockey           0   0  15  13   0   4   6  12  37  102   1   0  46   0   1  53   0   1   0  15
+soc.religion.christian     0   0  17  16   0   1   1   8  42   89   1   0  48   0   1  30   0  74   0  39
+sci.electronics            0   0  11  10   0   3   0  16  56   81  28   0  39   0   0  34   0   2   0  25
+comp.sys.ibm.pc.hardware   0   0  12  12   0   0   0  10  58   61  56   0  24   0   2  27   0   0   0  62
+C:\ProgramData\Miniconda3\lib\site-packages\sklearn\metrics\classification.py:1143: UndefinedMetricWarning: Precision and F-score are ill-defined and being set to 0.0 in labels with no predicted samples.
+  'precision', 'predicted', average, warn_for)
+                              prec    recall         F    sup
+nms
+comp.graphics             0.000000  0.000000  0.000000  431.0
+rec.autos                 0.000000  0.000000  0.000000  477.0
+misc.forsale              0.094044  0.085960  0.089820  349.0
+alt.atheism               0.045643  0.031250  0.037099  352.0
+sci.space                 0.000000  0.000000  0.000000  466.0
+sci.med                   0.064516  0.003937  0.007421  508.0
+talk.politics.misc        0.090909  0.008696  0.015873  345.0
+alt.atheism               0.080745  0.057522  0.067183  226.0
+sci.space                 0.000000  0.000000  0.000000  325.0
+sci.med                   0.217391  0.015723  0.029326  318.0
+talk.politics.misc        0.000000  0.000000  0.000000  231.0
+talk.religion.misc        0.020690  0.015873  0.017964  189.0
+rec.sport.baseball        0.060741  0.135762  0.083930  302.0
+rec.motorcycles           0.049197  0.167808  0.076087  292.0
+comp.os.ms-windows.misc   0.240803  0.230032  0.235294  313.0
+talk.politics.guns        0.000000  0.000000  0.000000  279.0
+sci.crypt                 0.070258  0.094044  0.080429  319.0
+comp.windows.x            0.000000  0.000000  0.000000  268.0
+comp.sys.mac.hardware     0.052632  0.003279  0.006173  305.0
+talk.politics.mideast     0.075515  0.114583  0.091034  288.0
+rec.sport.hockey          0.000000  0.000000  0.000000  317.0
+soc.religion.christian    0.459459  0.160377  0.237762  318.0
+sci.electronics           0.000000  0.000000  0.000000  323.0
+comp.sys.ibm.pc.hardware  0.125945  0.165017  0.142857  303.0
+AVGS                      0.076855  0.062349  0.057667  285.8
+['d:\\repo\\datascience4managers\\src\\manual_split_test\\splits_aggregator.py', '-d', 'D:/OneDrive - Microsoft/data/20news', '-p', '10', '-r', '5', '-c', '100']
+Done in  3.641  secs! At UTC:  Thu Nov 14 00:37:42 2019
+P
