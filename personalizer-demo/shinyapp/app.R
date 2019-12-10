@@ -15,7 +15,12 @@ valueFunc = function() {
   result <- dbSendQuery(con, "SELECT side, action, choice, CAST(COUNT(*) AS VARCHAR(10)) FROM food_choices GROUP BY side, action, choice ORDER BY side, action, choice")
   result_set <- dbFetch(result)
   dbClearResult(result)
-  return(result_set)
+
+  total <- sum(as.integer(result_set$count))
+  df <- data.frame("TOTAL","", "", as.character(total))
+  names(df) <- names(result_set)
+  results_with_sum <- rbind(result_set, df)
+  return(results_with_sum)
 }
 
 server <- function(input, output, session) {
