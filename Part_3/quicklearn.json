@@ -1,0 +1,4 @@
+{
+  "name": "quicklearn",
+  "arguments": "--cb_explore_adf --epsilon 0.2 --dsjson --power_t 0 -l 1.0 --cb_type mtr -q ::"
+}
