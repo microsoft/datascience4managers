@@ -7,17 +7,14 @@ products:
 description: "Add 150 character max description"
 ---
 
-# Official Microsoft Sample
+# Data Science for Managers
 
-<!-- 
-Guidelines on README format: https://review.docs.microsoft.com/help/onboard/admin/samples/concepts/readme-template?branch=master
+This lab introduces fundamental concepts of machine learning (ML) as they apply to making data driven decisions. Our goal is to empower decision makers to make more effective use of machine learning results and be better able to evaluate opportunities to apply ML in their industries. You will get a brief overview of what it means to discover generalizable patterns in data, and learn basic principles of how to apply probabilistic results, including optimizing the business value of applying machine learning classifiers based on their sensitivity and specificity. Finally, you will learn how ML and advanced analytics can help to guide (but not replace) the process of experimentally testing the effects of incremental changes to products and processes.
 
-Guidance on onboarding samples to docs.microsoft.com/samples: https://review.docs.microsoft.com/help/onboard/admin/samples/process/onboarding?branch=master
+This is a non-programming workshop for business leaders and other people involved in managing products and making decisions based on data. The hands-on exercises require a web browser and Microsoft Excel.
 
-Taxonomies for products and languages: https://review.docs.microsoft.com/new-hope/information-architecture/metadata/taxonomies?branch=master
--->
 
-Give a short description for your sample here. What does it do and why is it important?
+
 
 ## Contents
 
