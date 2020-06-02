@@ -1,8 +1,3 @@
----
-output:
-  html_document: default
-  word_document: default
----
 # Decisions, decisions.
 
 _In which we use economic utility models to set a threshold for a binary classifier, based on the cost or benefit of making 4 types of correct and incorrect decisions._
@@ -36,7 +31,7 @@ Choosing a position along the necklace is equivalent to setting a threshold valu
 
 Let's go back to the ROC plot and count how many of the red and blue beads we got right and wrong for each bead position:
 
-![threshold scan animation](images/threshold_scan.gif)
+![threshold scan animation](images/threshold_scan_v3.gif)
 
 > This animation shows the sorted beads (already laid out as an ROC curve by the turtle) being scanned to compute a confusion matrix for each bead position along the sorted necklace. Beads above the threshold are shown in bright colors, while those below the threshold are more pale. Every time the threshold passes a red bead we turn a false negative into a true positive, and every time it passes a blue bead it turns a true negative into a false positive. The test set represented by this curve contains 20 red beads and 30 blue ones.
 
