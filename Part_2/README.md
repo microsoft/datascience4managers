@@ -1,8 +1,3 @@
----
-output:
-  html_document: default
-  word_document: default
----
 # Decisions, decisions.
 
 _In which we use economic utility models to set a threshold for a binary classifier, based on the cost or benefit of making 4 types of correct and incorrect decisions._
