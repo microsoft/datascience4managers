@@ -8,7 +8,7 @@ In this exercise we will be trying to build a text classifier, that is, a progra
 * the [rule authoring web app](https://marinchapp10.azurewebsites.net/) is where you can add your rules to the database. It shows you example posts (from the training set) and lets you pick phrases that you think are indicative of belonging to that newsgroup.
 
 * the [rule performance webapp](https://ml4managers.shinyapps.io/evaluate_rules/) lets you see how the well the whole collection of rules works on a held-out test set
-(see [Part 2](Part_2) to learn about confusion matrixes and ROC curves, which are shown in this app).
+(see [Part 2](../Part_2) to learn about confusion matrixes and ROC curves, which are shown in this app).
 
 Here are some examples of rules people have come up with previously:
 ```
