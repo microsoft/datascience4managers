@@ -1,12 +1,3 @@
----
-page_type: workshop
-languages:
-- python, sql, r
-products:
-- Personalizer Service, App Services
-description: "This hands-on, self-service lab introduces fundamental concepts of machine learning (ML) as they apply to making data driven decisions."
----
-
 # Generalization, Utility, and Experimentation: ML Concepts for Making Better Business Decisions
 
 This hands-on, self-service lab introduces fundamental concepts of machine learning (ML) as they apply to making data driven decisions.
