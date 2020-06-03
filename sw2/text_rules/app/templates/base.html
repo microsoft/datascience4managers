@@ -1,0 +1,32 @@
+<html>
+	<head>
+		<title>Rule-Based Text Classifier</title>
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+	</head>
+	<body>
+		<header>
+			<div class="container">
+			<ul class="menu">
+				<li><a href="{{ url_for('index') }}">Instructions</a></li>
+				<li><a href="{{ url_for('task') }}">Pick tags</a></li>
+				<li><a href="{{ url_for('rules') }}">Show rules</a></li>
+			</ul>
+			</div>
+		</header>
+		<hr>
+		<div class="container">
+			<div class="messages">
+			{% with messages = get_flashed_messages() %}
+			{% if messages %}
+			<ul>
+				{% for message in messages %}
+				<li>{{ message }}</li>
+				{% endfor %}
+			</ul>
+			{% endif %}
+			{% endwith %}
+			</div>
+		{% block content %}{% endblock %}
+		</div>
+	</body>
+</html>

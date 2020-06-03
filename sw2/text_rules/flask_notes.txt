@@ -1,0 +1,33 @@
+cd Documents\flaskdir
+flaskenv\scripts\activate
+flask run
+
+
+###################33
+
+cd rhorton\Documents
+mkdir flaskdir
+cd flaskdir
+python -m venv flaskenv
+flaskenv\scripts\activate
+
+# set FLASK_APP=text_rules.py
+flask run
+
+pip install flask
+pip install python-dotenv # to use .flaskenv
+pip install flask-wtf
+pip install flask-sqlalchemy
+
+# azure blob storage python example
+
+
+
+#####
+
+pip freeze > requirements.txt  # delete “pkg-resources==0.0.0”
+
+az login
+az account set --subscription "Unified User Understanding"
+cd C:\Users\rhorton\Documents\flaskdir
+az webapp up --sku F1 -n textrules -l westus2
