@@ -7,7 +7,8 @@ In this exercise we will be trying to build a text classifier, that is, a progra
 
 * the [rule authoring web app](https://marinchapp10.azurewebsites.net/) is where you can add your rules to the database. It shows you example posts (from the training set) and lets you pick phrases that you think are indicative of belonging to that newsgroup.
 
-* the [rule performance webapp](https://ml4managers.shinyapps.io/evaluate_rules/) lets you see how the well the whole collection of rules works on a held-out test set.
+* the [rule performance webapp](https://ml4managers.shinyapps.io/evaluate_rules/) lets you see how the well the whole collection of rules works on a held-out test set
+(see [Part 2](Part_2) to learn about confusion matrixes and ROC curves, which are shown in this app).
 
 Here are some examples of rules people have come up with previously:
 ```
@@ -19,7 +20,7 @@ talk.politics.mideast,Justice
 talk.politics.mideast,discrimination
 talk.politics.mideast,second class citizens
 ```
-These rules mean that some users thought that the terms 'cops', 'revolvers', and 'weapons' can be taken as indicators that a post belongs to the `talk.politics.guns` newsgroup, and that the terms 'muslim', 'Justice', 'discrimination' and 'second class citizen' indicate that a post belongs to `talk.politics.mideast`. Note that a term dosn't need to be just a single word, it can be a phrase.
+These rules mean that some users thought that the terms 'cops', 'revolvers', and 'weapons' can be taken as indicators that a post belongs to the `talk.politics.guns` newsgroup, and that the terms 'muslim', 'Justice', 'discrimination' and 'second class citizen' indicate that a post belongs to `talk.politics.mideast`. Note that a term doesn't need to be just a single word, it can be a phrase.
 
 The plan is to collect all the rules you and your fellow participants come up with, and apply them to a test set of newsgroup posts to see how well they let us figure out what newsgroup the post belongs to, just by looking at the content of the post. This kind of program is called a _classifier_ because it decides what group a post appears to belong to.
 
