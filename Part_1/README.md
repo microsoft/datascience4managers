@@ -1,11 +1,3 @@
----
-title: "Hand-Coded Rules for Classifying Newsgroup Posts"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
 In this exercise you will be asked to examine a number of vintage newsgroup posts and identify terms or phrases that you think will be useful for identifying other posts to that same newsgroup.
 
