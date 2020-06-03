@@ -16,6 +16,8 @@ Finally, you will learn how ML and advanced analytics can help to guide (but not
 
 This is a non-programming workshop for business leaders and other people involved in managing products and making decisions based on data. The hands-on exercises require a web browser and Microsoft Excel.
 
+This contents is available in the repository [datascience4managers](https://github.com/microsoft/datascience4managers).
+
 ## Contents
 
 [Part 1](Part_1) - Learn how machine learning (ML) differs from traditional software engineering
