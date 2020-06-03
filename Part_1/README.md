@@ -3,7 +3,7 @@
 
 _In which we study a training dataset to learn patterns that relate features of the cases to their observed outcomes, and attempt to apply these patterns to a test dataset._
 
-In this exercise we will be trying to build a text classifier, that is, a program that can look at some textual data and decide what category it belongs to, using traditional hard-coded logic. You will be asked to examine a number of vintage newsgroup posts and identify terms or phrases that you think will be useful for identifying other posts in that same newsgroup. We will be using two web apps:
+In this exercise we will be trying to build a text classifier, that is, a program that can look at some textual data and decide what category it belongs to. You will be asked to examine a number of vintage newsgroup posts and identify terms or phrases that you think will be useful for identifying other posts in that same newsgroup. We will be using two web apps:
 
 * the [rule authoring web app](https://marinchapp10.azurewebsites.net/) is you can add your rules to the database.
 
