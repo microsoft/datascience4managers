@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<h1>Instructions</h1>
+	<p>
+	Each time you load the 'Pick tags' page, you will be shown posts from two different newsgroups. Your job is to select one term or phrase from each post that you think is characteristic of that newsgroup. We will present two newsgroup posts at a time because it is sometimes easier to think about the terms that could distinguish two examples, but we want to use the terms you identify to tell each of the 20 newsgroups apart from all the others.
+	</p>
+	
+	<h2>Examples</h2>
+	
+	<dl>
+	<dt>newsgroup:</dt>
+    <dd>talk.politics.misc</dd>
+	<dt>post:</dt>
+    <dd>If we had backed him strongly early on I doubt there would be the problem there is now. Many Russians became disillusioned with democracy and reforms when they felt, rightly IMO, that the West didn't care.</dd>
+	</dl>
+	possible tags in this post that indicate it belongs in talk.politics.misc: democracy, reforms 
+	<hr />
+	
+	<dl>
+	<dt>newsgroup:</dt>
+    <dd>rec.motorcycles</dd>
+	<dt>post:</dt>
+    <dd>I'm looking for a 1990-91 Kawasaki ZX-6 engine. Just the engine, no intake, exhaust, ignition, etc. Preferably in the central texas area, but we haven't had much luck around here so we'll take whatever we can get. Please reply via mail or call (512) 471-5399 if you have one (or more... really need a spare).</dd>
+	</dl>
+	possible tags in this post that indicate it belongs in rec.motorcycles: Kawasaki, engine, intake, exhaust, ignition
+	
+{% endblock %}

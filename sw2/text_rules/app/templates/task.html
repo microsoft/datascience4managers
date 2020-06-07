@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+	<p>Enter tags from these posts that can help us tell these newsgroups apart.</p>
+	<form action="" method="post" novalidate>
+		{{ form.hidden_tag() }}
+		<dl>
+			<dt>newsgroup:</dt> 
+			<dd>{{ rpp[0].label }}</dd>
+			<dt>post:</dt>
+			<dd>{{ rpp[0].msg }}</dd>
+			<dt>{{ form.tagA.label }}:<dt>
+			<dd>{{ form.tagA(size=32) }}</dd><br />
+			{% for error in form.tagA.errors %}
+			<span style="color: red;">[{{ error }}]</span>
+			{% endfor %}
+		</dl>
+		<hr />
+		<dl>
+			<dt>newsgroup:</dt> 
+			<dd>{{ rpp[1].label }}</dd>
+			<dt>post:</dt>
+			<dd>{{ rpp[1].msg }}</dd>
+			<dt>{{ form.tagB.label }}:</dt>
+			<dd>{{ form.tagB(size=32) }}</dd>
+			{% for error in form.tagB.errors %}
+			<span style="color: red;">[{{ error }}]</span>
+			{% endfor %}
+		</dl>
+		<p>{{ form.submit() }}</p>
+	</form>
+{% endblock %}

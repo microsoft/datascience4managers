@@ -1,0 +1,176 @@
+---
+title: "Predicted effects of x and z"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, message=FALSE)
+```
+
+This app plots the predicted outcome (`y`-value) for given inputs (`x` and`z` values). There are three types of models (lm, randomForest, and nnet) and two formulas (formula `A` is `y ~ x` and formula B is `y ~ x + z`).
+
+
+```{r build_models, echo=FALSE, message=FALSE, warning=FALSE}
+library(nnet)
+library(randomForest)
+library(dplyr)
+library(ggplot2)
+library(whisker)
+
+DATA_DIR <- "models_and_data"
+
+TRAIN_MODELS <- GENERATE_DATA <- FALSE
+
+if (GENERATE_DATA){
+  simulate_data <- function(N, m, 
+                            b=list(x=7, y=100, z=-15),
+                            sigma=list(x=1.5, y=4, z=4)){
+    x <- b$x + rnorm(N, sd=sigma$x)
+    y <- m[1] * x + b$y + rnorm(N, sd=sigma$y)
+    z <- y - (m[2]*x + b$z) + rnorm(N, sd=sigma$z)
+    tibble(x, y, z)
+  }
+  
+  set.seed(1)
+  simdata <- simulate_data(1e3, c(-4, 5))
+  summary(simdata)
+  write.csv(simdata, file.path(DATA_DIR, 'confounded_data.csv'))
+} else {
+  simdata <- read.csv(file.path(DATA_DIR,'confounded_data.csv'), stringsAsFactors=FALSE)
+}
+
+
+formula_A <- y ~ x
+formula_B <- y ~ x + z
+
+# model_names <- paste(rep(c('randomForest', 'nnet', 'lm'), each=2), c('A', 'B'), sep='_') %>% setNames(nm=.)
+
+
+if (TRAIN_MODELS){
+  lm_A <- lm(formula_A, simdata)
+  lm_B <- lm(formula_B, simdata)
+  
+  randomForest_A <- randomForest(formula_A, simdata, ntree=15)
+  randomForest_B <- randomForest(formula_B, simdata, ntree=15)
+  
+  nnet_A <- nnet(formula_A, simdata, size=10, linout=TRUE, maxit=1e3)
+  nnet_B <- nnet(formula_B, simdata, size=10, linout=TRUE, maxit=1e3)
+  
+  saveRDS(lm_A, file.path(DATA_DIR, 'lm_A.Rds'))
+  saveRDS(lm_B, file.path(DATA_DIR, 'lm_B.Rds'))
+  saveRDS(randomForest_A, file.path(DATA_DIR, 'randomForest_A.Rds'))
+  saveRDS(randomForest_B, file.path(DATA_DIR, 'randomForest_B.Rds'))
+  saveRDS(nnet_A, file.path(DATA_DIR, 'nnet_A.Rds'))
+  saveRDS(nnet_B, file.path(DATA_DIR, 'nnet_B.Rds'))
+} else {
+  lm_A <- readRDS(file.path(DATA_DIR, 'lm_A.Rds'))
+  lm_B <- readRDS(file.path(DATA_DIR, 'lm_B.Rds'))
+  randomForest_A <- readRDS(file.path(DATA_DIR, 'randomForest_A.Rds'))
+  randomForest_B <- readRDS(file.path(DATA_DIR, 'randomForest_B.Rds'))
+  nnet_A <- readRDS(file.path(DATA_DIR, 'nnet_A.Rds'))
+  nnet_B <- readRDS(file.path(DATA_DIR, 'nnet_B.Rds'))
+}
+
+
+standard_predict <- function(model, test_data){
+  if ('nnet' %in% class(model)){
+    predict(model, test_data, type='raw')[,1]
+  } else{
+    predict(model, test_data)
+  }
+}
+
+```
+
+```{r eruptions, echo=FALSE, message=FALSE, warning=FALSE}
+
+X_LIM <- simdata$x %>% range %>% round
+Y_LIM <- simdata$y %>% range %>% round
+Z_LIM <- simdata$z %>% range %>% round
+
+LOGGED_DATA <- data.frame(x=c(), z=c())
+
+MODEL_TYPES <- c('lm', 'randomForest', 'nnet')
+MODEL_FORMULAS <- c('A', 'B')
+
+MODEL_NAMES <- paste(MODEL_TYPES, rep(MODEL_FORMULAS, times=length(MODEL_TYPES)), sep='_')
+
+SCENARIO_DESCRIPTION_TEMPLATE <- "<h1>{{scenario_name}} Scenario</h1>
+Here we want to understand the effect of {{x}} on {{y}}, with {{z}} as a potential confounder. Should we adjust for {{z}} in the analysis, or not?
+"
+SCENARIOS <- list(
+  Medicine = list(x='drug', y='pain', z='age'),
+  Maintenance = list(x='effort', y='uptime', z='technician experience')
+)
+
+inputPanel(
+  selectInput("scenario", label="select scenario", choices=names(SCENARIOS), selected=1),
+
+  selectInput("model", label = "Select predictive model:", choices = MODEL_NAMES, selected = 2),
+  
+  uiOutput('z_slider_placeholder'),
+
+  uiOutput('x_slider_placeholder')
+)
+
+mainPanel(
+  htmlOutput('scenario_description')
+) 
+
+output$x_slider_placeholder <- renderUI({
+  sliderInput("x", label=paste(SCENARIOS[[input$scenario]]$x,':'),
+              min=X_LIM[1], max=X_LIM[2], value= -0.6)
+})
+
+output$z_slider_placeholder <- renderUI({
+  default_z <- round(mean(Z_LIM))
+  sliderInput("z", label=paste(SCENARIOS[[input$scenario]]$z,':'),
+              min=Z_LIM[1], max=Z_LIM[2], value=default_z)
+})
+
+output$scenario_description <- renderUI({
+  data <- SCENARIOS[[input$scenario]]
+  data$scenario_name <- input$scenario
+  HTML(whisker.render(SCENARIO_DESCRIPTION_TEMPLATE, data))
+})
+
+# input <- list(model='lm_A', x=0.1, z=0.1, scenario='Medicine')
+renderPlot({
+  selected_model <- get(input$model)
+  input_case <- data.frame(x=input$x, z=input$z, model_name=input$model,
+                           stringsAsFactors=FALSE)
+  input_case$y <- predicted_outcome <- standard_predict(selected_model, input_case)
+  LOGGED_DATA <<- bind_rows(LOGGED_DATA, input_case)
+  
+  predictions <- LOGGED_DATA %>% 
+    mutate(model_type=gsub('_.*', '', model_name), model_formula=gsub('.*_', '', model_name)) %>% 
+    arrange(x)
+  
+  simdata %>% 
+    ggplot(aes(x=x, y=y)) +
+    geom_point(aes(fill=z), shape=21, size=4, stroke=0.1, alpha=0.95) +
+    scale_fill_gradient(low="lightblue", high="pink") +
+    geom_line(data=predictions, 
+              mapping=aes(col=model_type,
+                          linetype=interaction(model_type, model_formula, z)),
+              size=1.5) + 
+    geom_point(data=predictions, 
+               mapping=aes(col=model_type, shape=model_formula),
+               size=5) +
+    coord_cartesian(xlim=X_LIM, ylim=Y_LIM) +
+    labs(x=SCENARIOS[[input$scenario]]$x, 
+         y=SCENARIOS[[input$scenario]]$y,
+         col='model type') +
+    ggtitle(paste(input$scenario, 'scenario'))
+
+    # ggplot(aes(x=x, y=y, col=model_type, 
+    #            shape=model_formula, 
+    #            linetype=interaction(model_type, model_formula, z)))
+
+  # col=interaction(model_type, model_formula)
+
+})
+
+```
+
