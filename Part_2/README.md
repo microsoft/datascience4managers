@@ -2,6 +2,10 @@
 
 _In which we use economic utility models to set a threshold for a binary classifier, based on the cost or benefit of making 4 types of correct and incorrect decisions._
 
+## Web resources
+
+ * [ML Utility Shiny app](https://ml4managers.shinyapps.io/ML_utility/)
+ 
 Most machine learning classifiers give fuzzy results; rather than telling you whether a customer will buy a product, they give you estimated probabilities. People accustomed to black and white answers may need to learn new approaches to deal with these shades of gray.
 
 In this series of hands-on exercises, we examine the process of characterizing the performance of a classifier by relating its _sensitivity_ (the ability to detect the positive cases) to its _specificity_ (the ability to not detect the negatives). In general, ML classifiers allow you to make a trade-off between quality and quantity by adjusting a threshold; you have to settle for finding fewer positives if you insist on only taking the purest subset. The theme of this section is to study what that tradeoff means, how to associate it with a cost or value, and how to estimate how much additional value can be realized by using a ML classifier.
