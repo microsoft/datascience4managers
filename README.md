@@ -5,7 +5,8 @@ Our goal is to empower decision makers to make more effective use of machine lea
 You will get a brief overview of what it means to discover generalizable patterns in data, and learn basic principles of how to apply probabilistic results, including optimizing the business value of applying machine learning classifiers based on their sensitivity and specificity.
 Finally, you will learn how ML and advanced analytics can help to guide (but not replace) the process of experimentally testing the effects of incremental changes to products and processes.
 
-This is a non-programming workshop for business leaders and other people involved in managing products and making decisions based on data. Start the tutorials by going through the pdf slide deck in each section.  Then do the the hands-on exercises.  They require only a web browser and Microsoft Excel.
+This is a non-programming workshop for business leaders and other people involved in managing products and making decisions based on data. 
+To start please go to the README file in each section. These describe the hands-on exercises that require only a web browser.
 
 The full downloadable content is here in this repository [datascience4managers](https://github.com/microsoft/datascience4managers).
 
